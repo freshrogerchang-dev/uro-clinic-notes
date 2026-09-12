@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>泌尿科門診病歷輔助工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#EFF2EE;
+    --paper:#FFFFFF;
+    --ink:#22302C;
+    --ink-soft:#556058;
+    --line:#D9DED8;
+    --teal:#2F5D62;
+    --teal-deep:#1D3E42;
+    --rust:#A1442B;
+    --rust-bg:#F6E9E4;
+    --amber-bg:#FBF3DE;
+    --amber-ink:#8A6A17;
+    --code-bg:#EAF0EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans','PingFang TC','Microsoft JhengHei',sans-serif;
+    line-height:1.6;
+    padding-bottom:80px;
+  }
+  header{
+    padding:28px 20px 20px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  header h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:600;
+    font-size:1.5rem;
+    margin:0 0 4px;
+    color:var(--teal-deep);
+  }
+  header p{
+    margin:0;
+    font-size:0.88rem;
+    color:var(--ink-soft);
+  }
+  main{
+    max-width:720px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .section{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 18px 20px;
+    margin-bottom:14px;
+  }
+  .section-num{
+    font-family:'Source Serif 4', serif;
+    font-size:0.78rem;
+    color:var(--teal);
+    letter-spacing:0.02em;
+    margin-bottom:2px;
+  }
+  .section h2{
+    font-family:'Source Serif 4', serif;
+    font-size:1.08rem;
+    font-weight:600;
+    margin:0 0 12px;
+    color:var(--ink);
+  }
+  .soap-group{
+    border:1px solid var(--line);
+    border-radius:6px;
+    margin-bottom:18px;
+    overflow:hidden;
+  }
+  .soap-header{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding:14px 18px;
+    background:var(--teal-deep);
+    color:#fff;
+  }
+  .soap-letter{
+    font-family:'Source Serif 4', serif;
+    font-size:1.6rem;
+    font-weight:700;
+    line-height:1;
+  }
+  .soap-header-text h2{
+    margin:0;
+    font-family:'Source Serif 4', serif;
+    font-size:1.05rem;
+    font-weight:600;
+  }
+  .soap-header-text p{
+    margin:2px 0 0;
+    font-size:0.76rem;
+    color:#CBDAD3;
+  }
+  .soap-body{
+    background:var(--paper);
+    padding:6px 18px 4px;
+  }
+  .sub-block{
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .sub-block:last-child{border-bottom:none;}
+  .sub-block h3{
+    font-family:'Source Serif 4', serif;
+    font-size:0.95rem;
+    font-weight:600;
+    margin:0 0 10px;
+    color:var(--ink);
+  }
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .field{
+    flex:1 1 140px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  label{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+  }
+  input[type=text], input[type=number], select, textarea{
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:8px 10px;
+    font-size:0.95rem;
+    font-family:inherit;
+    color:var(--ink);
+    background:#FCFDFC;
+    width:100%;
+  }
+  textarea{resize:vertical;min-height:56px;}
+  fieldset{border:none;padding:0;margin:0 0 10px;}
+  legend{font-size:0.86rem;color:var(--ink);font-weight:500;margin-bottom:6px;padding:0;}
+  .check-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:6px 10px;
+  }
+  .check-grid label{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    font-size:0.86rem;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .redflag-box{
+    background:var(--rust-bg);
+    border:1px solid #E5C6BA;
+    border-radius:4px;
+    padding:12px 14px;
+  }
+  .redflag-box legend{color:var(--rust);font-weight:600;}
+  .hint{font-size:0.78rem;color:var(--ink-soft);margin-top:6px;}
+  .q-block{
+    border-top:1px solid var(--line);
+    padding-top:10px;
+    margin-top:10px;
+  }
+  .q-block:first-child{border-top:none;margin-top:0;padding-top:0;}
+  .q-text{font-size:0.9rem;margin-bottom:6px;}
+  .opt-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .opt-row label{
+    font-size:0.82rem;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:5px 9px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .hidden{display:none !important;}
+  .score-tag{
+    display:inline-block;
+    margin-top:8px;
+    font-size:0.84rem;
+    padding:4px 10px;
+    border-radius:3px;
+    background:var(--amber-bg);
+    color:var(--amber-ink);
+  }
+  .icd-block label{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    font-size:0.84rem;
+    color:var(--ink);
+    padding:4px 0;
+    cursor:pointer;
+  }
+  .icd-code{
+    font-family:'IBM Plex Sans',monospace;
+    font-weight:600;
+    color:var(--teal-deep);
+    white-space:nowrap;
+  }
+  .placeholder-note{
+    font-size:0.84rem;
+    color:var(--ink-soft);
+    font-style:italic;
+    padding:6px 0;
+  }
+  button{
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .cc-btn-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:10px;
+  }
+  .cc-btn{
+    text-align:left;
+    background:#FCFDFC;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:12px 12px;
+    font-size:0.92rem;
+    font-weight:500;
+    color:var(--ink);
+    line-height:1.4;
+    transition:border-color .15s, background .15s;
+  }
+  .cc-btn span{
+    display:block;
+    font-size:0.76rem;
+    font-weight:400;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .cc-btn:hover{border-color:var(--teal);}
+  .cc-btn.active{
+    background:var(--teal-deep);
+    border-color:var(--teal-deep);
+    color:#fff;
+  }
+  .cc-btn.active span{color:#DCE7E3;}
+  .roc-date-group{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .roc-date-group input{width:56px;text-align:center;}
+  .roc-date-group span{color:var(--ink-soft);}
+  .entry-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:6px;
+    align-items:center;
+  }
+  .entry-row input[type=text]{flex:2 1 160px;}
+  .entry-row .remove-row-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:3px;
+    color:var(--rust);
+    padding:6px 9px;
+    font-size:0.8rem;
+    flex:0 0 auto;
+  }
+  .add-row-btn{
+    background:none;
+    border:1px dashed var(--teal);
+    color:var(--teal);
+    border-radius:3px;
+    padding:6px 12px;
+    font-size:0.82rem;
+    margin-top:2px;
+  }
+  .generate-btn{
+    width:100%;
+    padding:14px;
+    font-size:1rem;
+    font-weight:600;
+    background:var(--teal-deep);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    margin-top:4px;
+  }
+  .generate-btn:active{background:var(--teal);}
+  #output-section{display:none;}
+  .output-box{
+    white-space:pre-wrap;
+    background:#FCFDFC;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px;
+    font-size:0.88rem;
+    font-family:'IBM Plex Sans',monospace;
+    line-height:1.65;
+  }
+  .copy-btn{
+    margin-top:10px;
+    background:var(--paper);
+    border:1px solid var(--teal);
+    color:var(--teal);
+    padding:8px 14px;
+    border-radius:3px;
+    font-size:0.85rem;
+  }
+  .copy-btn:active{background:var(--teal);color:#fff;}
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .login-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:28px 24px;
+    width:100%;
+    max-width:320px;
+  }
+  .login-card h2{
+    font-family:'Source Serif 4', serif;
+    font-size:1.15rem;
+    margin:0 0 4px;
+    color:var(--teal-deep);
+  }
+  .login-card p{font-size:0.82rem;color:var(--ink-soft);margin:0 0 16px;}
+  .login-card input{margin-bottom:10px;}
+  .login-btn{
+    width:100%;
+    padding:11px;
+    background:var(--teal-deep);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    font-size:0.95rem;
+    font-weight:600;
+    margin-top:4px;
+  }
+  .login-error{
+    color:var(--rust);
+    font-size:0.8rem;
+    margin-top:8px;
+    min-height:1.2em;
+  }
+  .topbar{
+    max-width:720px;
+    margin:0 auto;
+    padding:8px 16px 0;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+  .logout-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:4px 10px;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .save-btn{
+    margin-top:10px;
+    margin-left:8px;
+    background:var(--teal);
+    border:1px solid var(--teal);
+    color:#fff;
+    padding:8px 14px;
+    border-radius:3px;
+    font-size:0.85rem;
+  }
+  .save-status{font-size:0.8rem;color:var(--ink-soft);margin-top:6px;}
+  .disclaimer{
+    font-size:0.76rem;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:18px;
+    padding:0 20px;
+  }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h2>登入 Login</h2>
+    <p>僅供已授權的醫師/同事使用</p>
+    <input type="text" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="密碼 Password">
+    <button class="login-btn" onclick="doLogin()">登入</button>
+    <div style="text-align:center;font-size:0.78rem;color:var(--ink-soft);margin:10px 0;">或</div>
+    <button class="login-btn" style="background:#fff;color:var(--ink);border:1px solid var(--line);" onclick="doGoogleLogin()">使用 Google 帳號登入</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div id="app-content" class="hidden">
+
+<div class="topbar">
+  <span id="user-email"></span>
+  <button class="logout-btn" onclick="doLogout()">登出 Logout</button>
+</div>
+
+<header>
+  <h1>泌尿科門診病歷輔助工具</h1>
+  <p>填寫病人基本資料與主訴後，依 SOAP 四大區塊填寫細節，自動整理成英文 SOAP 病歷草稿。</p>
+</header>
+
+<main>
+
+  <div class="section">
+    <div class="section-num">01</div>
+    <h2>基本資料 Demographics</h2>
+    <div class="row">
+      <div class="field"><label>姓名 Name</label><input type="text" id="p-name"></div>
+      <div class="field"><label>病歷號 MRN</label><input type="text" id="p-id"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>年齡 Age</label><input type="number" id="p-age" min="0" max="120"></div>
+      <div class="field">
+        <label>性別 Sex</label>
+        <select id="p-sex">
+          <option value="male">男性 Male</option>
+          <option value="female">女性 Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>看診日期 Date（民國年/月/日）</label>
+        <div class="roc-date-group">
+          <input type="number" id="p-date-y" placeholder="年" min="1" max="200">
+          <span>/</span>
+          <input type="number" id="p-date-m" placeholder="月" min="1" max="12">
+          <span>/</span>
+          <input type="number" id="p-date-d" placeholder="日" min="1" max="31">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-num">02</div>
+    <h2>主訴 Chief Complaint</h2>
+    <p class="hint" style="margin:-6px 0 12px;">請點選最符合的主訴類型，選擇後會展開 SOAP 四大表格。</p>
+    <input type="hidden" id="chief-complaint" value="">
+    <div class="cc-btn-grid">
+      <button type="button" class="cc-btn" data-value="luts" onclick="selectComplaint('luts')">下泌尿道症狀<br><span>頻尿／尿急／排尿無力，疑BPH</span></button>
+      <button type="button" class="cc-btn" data-value="hematuria" onclick="selectComplaint('hematuria')">血尿<br><span>Hematuria</span></button>
+      <button type="button" class="cc-btn" data-value="stone" onclick="selectComplaint('stone')">疑似泌尿道結石<br><span>腰痛／腎絞痛</span></button>
+      <button type="button" class="cc-btn" data-value="uti" onclick="selectComplaint('uti')">疑似泌尿道感染<br><span>UTI</span></button>
+      <button type="button" class="cc-btn" data-value="incontinence" onclick="selectComplaint('incontinence')">尿失禁<br><span>Incontinence</span></button>
+      <button type="button" class="cc-btn" data-value="ed" onclick="selectComplaint('ed')">性功能障礙<br><span>Erectile dysfunction</span></button>
+      <button type="button" class="cc-btn" data-value="scrotal" onclick="selectComplaint('scrotal')">陰囊 / 睪丸問題<br><span>Scrotal / testicular</span></button>
+      <button type="button" class="cc-btn" data-value="other" onclick="selectComplaint('other')">其他<br><span>Other</span></button>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <div class="field"><label>症狀持續時間 Duration</label><input type="text" id="cc-duration" placeholder="e.g. 3 months"></div>
+      <div class="field" style="flex:2 1 240px;"><label>主訴補充描述（建議以英文輸入，將直接放入病歷）</label><input type="text" id="cc-note" placeholder="brief description in English"></div>
+    </div>
+  </div>
+
+  <div id="rest-of-form" class="hidden">
+
+    <!-- ============ SUBJECTIVE ============ -->
+    <div class="soap-group">
+      <div class="soap-header">
+        <span class="soap-letter">S</span>
+        <div class="soap-header-text">
+          <h2>Subjective</h2>
+          <p>病人自述：症狀、警訊、過去病史</p>
+        </div>
+      </div>
+      <div class="soap-body">
+
+        <div class="sub-block">
+          <h3>紅旗警訊症狀 Red-flag symptoms（務必確認）</h3>
+          <fieldset class="redflag-box">
+            <legend>是否出現以下情形</legend>
+            <div class="check-grid">
+              <label><input type="checkbox" value="gross hematuria">肉眼血尿 Gross hematuria</label>
+              <label><input type="checkbox" value="fever/chills">發燒/畏寒 Fever/chills</label>
+              <label><input type="checkbox" value="severe flank/abdominal colicky pain">劇烈腰腹絞痛 Severe colicky pain</label>
+              <label><input type="checkbox" value="acute urinary retention">無法解尿(急性尿滯留) Acute retention</label>
+              <label><input type="checkbox" value="unexplained weight loss">不明原因體重下降 Weight loss</label>
+              <label><input type="checkbox" value="bone pain">骨頭疼痛 Bone pain</label>
+              <label><input type="checkbox" value="lower extremity weakness/numbness">下肢無力/麻木 LE weakness/numbness</label>
+              <label><input type="checkbox" value="severe acute scrotal pain (rule out torsion)">陰囊劇烈疼痛(需排除扭轉) Severe scrotal pain</label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="sub-block">
+          <h3>主訴相關症狀清單 Complaint-specific symptoms</h3>
+          <p class="placeholder-note cc-placeholder">請先在上方點選主訴類型。</p>
+
+          <div class="complaint-block hidden" data-cc="luts">
+            <div class="check-grid">
+              <label><input type="checkbox" value="urinary frequency">頻尿 Frequency</label>
+              <label><input type="checkbox" value="nocturia">夜尿 Nocturia</label>
+              <label><input type="checkbox" value="urinary urgency">尿急 Urgency</label>
+              <label><input type="checkbox" value="hesitancy">排尿遲緩 Hesitancy</label>
+              <label><input type="checkbox" value="weak urinary stream">尿流變細 Weak stream</label>
+              <label><input type="checkbox" value="intermittency">解尿中斷 Intermittency</label>
+              <label><input type="checkbox" value="post-void dribbling">尿後餘瀝 Post-void dribbling</label>
+              <label><input type="checkbox" value="straining to void">解尿需用力 Straining</label>
+              <label><input type="checkbox" value="sensation of incomplete bladder emptying">解尿不乾淨感 Incomplete emptying</label>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="hematuria">
+            <div class="check-grid">
+              <label><input type="checkbox" value="gross hematuria">肉眼可見血尿 Gross hematuria</label>
+              <label><input type="checkbox" value="microscopic hematuria (incidental finding)">鏡檢血尿(健檢發現) Microscopic (incidental)</label>
+              <label><input type="checkbox" value="blood clots">伴隨血塊 Blood clots</label>
+              <label><input type="checkbox" value="painful hematuria">伴隨疼痛 Painful</label>
+              <label><input type="checkbox" value="painless hematuria">無痛性血尿 Painless</label>
+              <label><input type="checkbox" value="smoking history">有抽菸史 Smoking history</label>
+              <label><input type="checkbox" value="occupational dye/chemical exposure">曾接觸染料/化學藥劑 Occupational exposure</label>
+              <label><input type="checkbox" value="family history of urologic malignancy">泌尿道腫瘤家族史 Family hx of urologic malignancy</label>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <div class="field"><label>抽菸包-年數（若有）Pack-years</label><input type="text" id="smoking-py" placeholder="e.g. 20 pack-years"></div>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="stone">
+            <div class="check-grid">
+              <label><input type="checkbox" value="unilateral flank pain">單側腰痛 Unilateral flank pain</label>
+              <label><input type="checkbox" value="pain radiating to groin">疼痛放射至鼠蹊部 Radiating to groin</label>
+              <label><input type="checkbox" value="colicky pain">陣發性絞痛 Colicky pain</label>
+              <label><input type="checkbox" value="nausea/vomiting">噁心嘔吐 Nausea/vomiting</label>
+              <label><input type="checkbox" value="prior urolithiasis">過去有結石病史 Prior stone hx</label>
+              <label><input type="checkbox" value="family history of urolithiasis">結石家族史 Family hx of stones</label>
+              <label><input type="checkbox" value="low fluid intake">水分攝取偏少 Low fluid intake</label>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="uti">
+            <div class="check-grid">
+              <label><input type="checkbox" value="dysuria">解尿灼熱感 Dysuria</label>
+              <label><input type="checkbox" value="urinary frequency/urgency">頻尿尿急 Frequency/urgency</label>
+              <label><input type="checkbox" value="suprapubic discomfort">下腹悶痛 Suprapubic discomfort</label>
+              <label><input type="checkbox" value="cloudy/malodorous urine">尿液混濁/有異味 Cloudy/malodorous urine</label>
+              <label><input type="checkbox" value="fever">發燒 Fever</label>
+              <label><input type="checkbox" value="costovertebral angle tenderness">腰部叩痛 CVA tenderness</label>
+              <label><input type="checkbox" value="recurrent UTI history">反覆感染病史 Recurrent UTI hx</label>
+              <label><input type="checkbox" value="indwelling catheter">留置導尿管 Indwelling catheter</label>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="incontinence">
+            <div class="check-grid">
+              <label><input type="checkbox" value="leakage with cough/exertion (stress-type)">咳嗽/用力時漏尿(應力性) Stress leakage</label>
+              <label><input type="checkbox" value="leakage after strong urge (urge-type)">強烈尿意後漏尿(急迫性) Urge leakage</label>
+              <label><input type="checkbox" value="continuous dribbling (overflow-type)">滴滴答答漏尿(滿溢性) Overflow dribbling</label>
+              <label><input type="checkbox" value="requires pad use">需使用護墊 Pad use</label>
+              <label><input type="checkbox" value="affects activities of daily living">影響日常生活 Affects ADLs</label>
+              <label><input type="checkbox" value="multiparity">曾生產多胎(女性) Multiparity</label>
+              <label><input type="checkbox" value="history of prostate surgery">攝護腺手術病史(男性) Prior prostate surgery</label>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="ed">
+            <div class="check-grid">
+              <label><input type="checkbox" value="diabetes mellitus">有糖尿病 Diabetes</label>
+              <label><input type="checkbox" value="hypertension">有高血壓 Hypertension</label>
+              <label><input type="checkbox" value="cardiovascular disease">有心血管疾病 Cardiovascular disease</label>
+              <label><input type="checkbox" value="medication possibly contributing (e.g., antihypertensives/antidepressants)">服用可能影響性功能之藥物 Contributing medication</label>
+              <label><input type="checkbox" value="psychological/stress-related factors">心理壓力因素 Psychological/stress factors</label>
+              <label><input type="checkbox" value="symptoms suggestive of hypogonadism (fatigue, low libido)">疑似睪固酮低下症狀 Suggestive of hypogonadism</label>
+            </div>
+          </div>
+
+          <div class="complaint-block hidden" data-cc="scrotal">
+            <div class="check-grid">
+              <label><input type="checkbox" value="palpable scrotal mass">摸到腫塊 Palpable mass</label>
+              <label><input type="checkbox" value="painful mass">腫塊會痛 Painful mass</label>
+              <label><input type="checkbox" value="acute severe pain (rule out torsion)">急性劇痛(需排除扭轉) Acute severe pain</label>
+              <label><input type="checkbox" value="scrotal swelling">陰囊腫脹 Scrotal swelling</label>
+              <label><input type="checkbox" value="history of trauma">外傷病史 Trauma history</label>
+              <label><input type="checkbox" value="associated fever">伴隨發燒 Associated fever</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-block">
+          <h3>過去病史 / 用藥 / 生活習慣 PMH（供你參考，不列入病歷文字）</h3>
+          <fieldset id="pmh-fieldset">
+            <legend>過去病史 PMH</legend>
+            <div class="check-grid">
+              <label><input type="checkbox" value="diabetes mellitus">糖尿病 Diabetes mellitus</label>
+              <label><input type="checkbox" value="hypertension">高血壓 Hypertension</label>
+              <label><input type="checkbox" value="cardiovascular disease">心血管疾病 Cardiovascular disease</label>
+              <label><input type="checkbox" value="chronic kidney disease">慢性腎臟病 Chronic kidney disease</label>
+              <label><input type="checkbox" value="prior urolithiasis">曾患泌尿道結石 Prior urolithiasis</label>
+              <label><input type="checkbox" value="prior urinary tract infection">曾患泌尿道感染 Prior UTI</label>
+              <label><input type="checkbox" value="prostate disease">攝護腺相關疾病 Prostate disease</label>
+              <label><input type="checkbox" value="prior urologic surgery">曾接受泌尿系統手術 Prior urologic surgery</label>
+            </div>
+          </fieldset>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;"><label>目前用藥 Medications</label><textarea id="p-meds" placeholder="drug name, dose"></textarea></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>藥物過敏史 Allergies</label><input type="text" id="p-allergy"></div>
+            <div class="field"><label>抽菸 / 飲酒 Social history</label><input type="text" id="p-social" placeholder="e.g. smoking 0.5 ppd"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ OBJECTIVE ============ -->
+    <div class="soap-group">
+      <div class="soap-header">
+        <span class="soap-letter">O</span>
+        <div class="soap-header-text">
+          <h2>Objective</h2>
+          <p>問卷分數、理學檢查、影像與檢驗結果</p>
+        </div>
+      </div>
+      <div class="soap-body">
+
+        <div class="sub-block">
+          <h3>症狀問卷 Symptom questionnaires</h3>
+          <p class="placeholder-note quest-placeholder">此主訴無標準問卷，或請先點選主訴類型。</p>
+
+          <div class="complaint-block hidden" data-cc="luts">
+            <div id="ipss-questions"></div>
+            <div id="ipss-score" class="score-tag hidden"></div>
+          </div>
+          <div class="complaint-block hidden" data-cc="incontinence">
+            <div id="oabss-questions"></div>
+            <div id="oabss-score" class="score-tag hidden"></div>
+          </div>
+          <div class="complaint-block hidden" data-cc="ed">
+            <div id="iief-questions"></div>
+            <div id="iief-score" class="score-tag hidden"></div>
+          </div>
+        </div>
+
+        <div class="sub-block">
+          <h3>理學檢查 Physical exam</h3>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;"><label>理學檢查發現（現場填寫，英文）</label><textarea id="p-exam" placeholder="e.g. Abdomen soft, non-tender. No CVA tenderness. DRE: prostate smooth, mildly enlarged, no nodules."></textarea></div>
+          </div>
+        </div>
+
+        <div class="sub-block">
+          <h3>影像與檢驗結果 Imaging &amp; labs</h3>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;">
+              <label>影像檢查結果 Imaging results（自行輸入，格式範例：CT (115/9): ...）</label>
+              <textarea id="p-imaging" placeholder="CT (115/9): Left distal ureteral stone 0.3cm with mild hydronephrosis, left ureteritis"></textarea>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;">
+              <label>檢驗結果 Lab results（自動加上民國年月日，如 [1150912] U/A）</label>
+              <div id="lab-rows"></div>
+              <button type="button" class="add-row-btn" onclick="addLabRow()">＋ 新增檢驗結果</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ ASSESSMENT ============ -->
+    <div class="soap-group">
+      <div class="soap-header">
+        <span class="soap-letter">A</span>
+        <div class="soap-header-text">
+          <h2>Assessment</h2>
+          <p>點選相關 ICD-10 診斷碼</p>
+        </div>
+      </div>
+      <div class="soap-body">
+        <div class="sub-block">
+          <p class="placeholder-note icd-placeholder">請先在上方點選主訴類型。</p>
+
+          <div class="complaint-block icd-block hidden" data-cc="luts">
+            <label><input type="checkbox" value="N40.0 - Benign prostatic hyperplasia without lower urinary tract symptoms"><span class="icd-code">N40.0</span> Benign prostatic hyperplasia without LUTS</label>
+            <label><input type="checkbox" value="N40.1 - Benign prostatic hyperplasia with lower urinary tract symptoms"><span class="icd-code">N40.1</span> Benign prostatic hyperplasia with LUTS</label>
+            <label><input type="checkbox" value="N41.1 - Chronic prostatitis"><span class="icd-code">N41.1</span> Chronic prostatitis</label>
+            <label><input type="checkbox" value="R33.9 - Urinary retention, unspecified"><span class="icd-code">R33.9</span> Urinary retention, unspecified</label>
+            <label><input type="checkbox" value="R39.15 - Urgency of urination"><span class="icd-code">R39.15</span> Urgency of urination</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="hematuria">
+            <label><input type="checkbox" value="R31.0 - Gross hematuria"><span class="icd-code">R31.0</span> Gross hematuria</label>
+            <label><input type="checkbox" value="R31.9 - Hematuria, unspecified"><span class="icd-code">R31.9</span> Hematuria, unspecified</label>
+            <label><input type="checkbox" value="R31.21 - Asymptomatic microscopic hematuria"><span class="icd-code">R31.21</span> Asymptomatic microscopic hematuria</label>
+            <label><input type="checkbox" value="R31.29 - Other microscopic hematuria"><span class="icd-code">R31.29</span> Other microscopic hematuria</label>
+            <label><input type="checkbox" value="N20.0 - Calculus of kidney"><span class="icd-code">N20.0</span> Calculus of kidney (differential)</label>
+            <label><input type="checkbox" value="C67.9 - Malignant neoplasm of bladder, unspecified"><span class="icd-code">C67.9</span> Malignant neoplasm of bladder (to be ruled out)</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="stone">
+            <label><input type="checkbox" value="N20.0 - Calculus of kidney"><span class="icd-code">N20.0</span> Calculus of kidney</label>
+            <label><input type="checkbox" value="N20.1 - Calculus of ureter"><span class="icd-code">N20.1</span> Calculus of ureter</label>
+            <label><input type="checkbox" value="N20.2 - Calculus of kidney with calculus of ureter"><span class="icd-code">N20.2</span> Calculus of kidney with calculus of ureter</label>
+            <label><input type="checkbox" value="N20.9 - Urinary calculus, unspecified"><span class="icd-code">N20.9</span> Urinary calculus, unspecified</label>
+            <label><input type="checkbox" value="N21.0 - Calculus in bladder"><span class="icd-code">N21.0</span> Calculus in bladder</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="uti">
+            <label><input type="checkbox" value="N39.0 - Urinary tract infection, site not specified"><span class="icd-code">N39.0</span> Urinary tract infection, site not specified</label>
+            <label><input type="checkbox" value="N30.00 - Acute cystitis without hematuria"><span class="icd-code">N30.00</span> Acute cystitis without hematuria</label>
+            <label><input type="checkbox" value="N30.01 - Acute cystitis with hematuria"><span class="icd-code">N30.01</span> Acute cystitis with hematuria</label>
+            <label><input type="checkbox" value="N30.90 - Cystitis, unspecified without hematuria"><span class="icd-code">N30.90</span> Cystitis, unspecified without hematuria</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="incontinence">
+            <label><input type="checkbox" value="N39.3 - Stress incontinence (female) (male)"><span class="icd-code">N39.3</span> Stress incontinence</label>
+            <label><input type="checkbox" value="N39.41 - Urge incontinence"><span class="icd-code">N39.41</span> Urge incontinence</label>
+            <label><input type="checkbox" value="N39.46 - Mixed incontinence"><span class="icd-code">N39.46</span> Mixed incontinence</label>
+            <label><input type="checkbox" value="N39.490 - Overflow incontinence"><span class="icd-code">N39.490</span> Overflow incontinence</label>
+            <label><input type="checkbox" value="N32.81 - Overactive bladder"><span class="icd-code">N32.81</span> Overactive bladder</label>
+            <label><input type="checkbox" value="R32 - Unspecified urinary incontinence"><span class="icd-code">R32</span> Unspecified urinary incontinence</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="ed">
+            <label><input type="checkbox" value="N52.9 - Male erectile dysfunction, unspecified"><span class="icd-code">N52.9</span> Male erectile dysfunction, unspecified</label>
+            <label><input type="checkbox" value="N52.01 - Erectile dysfunction due to arterial insufficiency"><span class="icd-code">N52.01</span> ED due to arterial insufficiency</label>
+            <label><input type="checkbox" value="N52.02 - Corporo-venous occlusive erectile dysfunction"><span class="icd-code">N52.02</span> Corporo-venous occlusive ED</label>
+            <label><input type="checkbox" value="N52.2 - Drug-induced erectile dysfunction"><span class="icd-code">N52.2</span> Drug-induced ED</label>
+            <label><input type="checkbox" value="N52.1 - Erectile dysfunction due to diseases classified elsewhere"><span class="icd-code">N52.1</span> ED due to diseases classified elsewhere</label>
+          </div>
+
+          <div class="complaint-block icd-block hidden" data-cc="scrotal">
+            <label><input type="checkbox" value="N44.00 - Torsion of testis, unspecified"><span class="icd-code">N44.00</span> Torsion of testis, unspecified</label>
+            <label><input type="checkbox" value="N45.1 - Epididymitis"><span class="icd-code">N45.1</span> Epididymitis</label>
+            <label><input type="checkbox" value="N43.3 - Hydrocele, unspecified"><span class="icd-code">N43.3</span> Hydrocele, unspecified</label>
+            <label><input type="checkbox" value="N50.819 - Testicular pain, unspecified"><span class="icd-code">N50.819</span> Testicular pain, unspecified</label>
+            <label><input type="checkbox" value="C62.90 - Malignant neoplasm of testis, unspecified"><span class="icd-code">C62.90</span> Malignant neoplasm of testis (to be ruled out)</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PLAN ============ -->
+    <div class="soap-group">
+      <div class="soap-header">
+        <span class="soap-letter">P</span>
+        <div class="soap-header-text">
+          <h2>Plan</h2>
+          <p>治療計畫與檢查提醒</p>
+        </div>
+      </div>
+      <div class="soap-body">
+
+        <div class="sub-block">
+          <h3>治療計畫 Treatment plan</h3>
+          <div class="row">
+            <div class="field" style="flex:1 1 200px;"><label>Planning 標題（簡短診斷）</label><input type="text" id="plan-heading" placeholder="e.g. UTI / Stone"></div>
+            <div class="field" style="flex:2 1 280px;"><label>診斷摘要（留空則自動帶入影像結果第一行）</label><input type="text" id="plan-dx-summary" placeholder="e.g. Left distal ureteral stone 0.3cm with mild hydronephrosis"></div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;"><label>治療計畫項目（每行一項，自動加上「. 」）</label><textarea id="p-plan" placeholder="Anti 6 days&#10;Informed if fever or chillness, please come back to ER&#10;MET first&#10;f/u 1 wk, U+K"></textarea></div>
+          </div>
+        </div>
+
+        <div class="sub-block">
+          <h3>檢查提醒 Workup reminder <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">(僅供你參考，不會列入病歷文字)</span></h3>
+          <div class="output-box" id="reminder-output">請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。</div>
+        </div>
+
+      </div>
+    </div>
+
+    <button class="generate-btn" onclick="generateNote()">產生英文 SOAP 病歷</button>
+
+    <div class="section" id="output-section">
+      <div class="section-num">03</div>
+      <h2>SOAP Note (English)</h2>
+      <div class="output-box" id="note-output"></div>
+      <button class="copy-btn" onclick="copyOutput()">複製全部文字 Copy</button>
+      <button class="save-btn" onclick="saveToFirebase()">☁ 儲存到雲端</button>
+      <div class="save-status" id="save-status"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<p class="disclaimer">本工具僅協助整理病人自述資訊、提示相關 ICD-10 代碼與常見檢查項目，最終診斷、理學檢查與檢查安排仍須由醫師依臨床判斷確認。</p>
+
+</div><!-- /app-content -->
+
+<script>
+// ====== FIREBASE 設定：請填入你自己 Firebase 專案的設定值 ======
+// 到 Firebase Console > 專案設定 > 一般 > 你的應用程式 取得
+const firebaseConfig = {
+  apiKey: "AIzaSyCBt10ve1Jlpwm9O5pL-rJ8wxq7rUOuOlU",
+  authDomain: "urologypatients-86cdb.firebaseapp.com",
+  projectId: "urologypatients-86cdb",
+  storageBucket: "urologypatients-86cdb.firebasestorage.app",
+  messagingSenderId: "839430918396",
+  appId: "1:839430918396:web:374f240b72958a51094779"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ====== 授權名單：只有這裡列出的 email 能使用（Google 登入用） ======
+const allowedEmails = [
+  "freshrogerchang@gmail.com"
+];
+
+auth.onAuthStateChanged(function(user){
+  if(user){
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-content').classList.remove('hidden');
+    document.getElementById('user-email').textContent = user.email;
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app-content').classList.add('hidden');
+  }
+});
+
+function doGoogleLogin(){
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(function(result){
+    const email = result.user.email;
+    if(!allowedEmails.includes(email)){
+      auth.signOut();
+      errEl.textContent = '此 Google 帳號（' + email + '）未獲授權使用本工具。';
+    }
+  }).catch(function(err){
+    errEl.textContent = '登入失敗：' + err.message;
+  });
+}
+
+function doLogin(){
+  const email = document.getElementById('login-email').value;
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
+    errEl.textContent = '登入失敗：帳號或密碼錯誤';
+  });
+}
+function doLogout(){
+  auth.signOut();
+}
+
+function saveToFirebase(){
+  const statusEl = document.getElementById('save-status');
+  const noteText = document.getElementById('note-output').textContent;
+  if(!noteText){ statusEl.textContent = '請先產生病歷再儲存。'; return; }
+  statusEl.textContent = '儲存中...';
+  db.collection('soap_notes').add({
+    ownerUid: auth.currentUser ? auth.currentUser.uid : null,
+    ownerEmail: auth.currentUser ? auth.currentUser.email : null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    patientName: document.getElementById('p-name').value,
+    mrn: document.getElementById('p-id').value,
+    chiefComplaint: document.getElementById('chief-complaint').value,
+    noteText: noteText
+  }).then(function(){
+    statusEl.textContent = '已儲存 ✓';
+    setTimeout(()=>{ statusEl.textContent=''; }, 2500);
+  }).catch(function(err){
+    statusEl.textContent = '儲存失敗：' + err.message;
+  });
+}
+
+const complaintLabelsEN = {
+  luts:"Lower urinary tract symptoms (suspected BPH)",
+  hematuria:"Hematuria",
+  stone:"Suspected urolithiasis (renal colic)",
+  uti:"Suspected urinary tract infection",
+  incontinence:"Urinary incontinence",
+  ed:"Erectile dysfunction",
+  scrotal:"Scrotal/testicular complaint",
+  other:"Other"
+};
+const hasQuestionnaire = { luts:true, incontinence:true, ed:true };
+
+function getMainRocDate(){
+  return {
+    y: document.getElementById('p-date-y').value || '',
+    m: document.getElementById('p-date-m').value || '',
+    d: document.getElementById('p-date-d').value || ''
+  };
+}
+
+function addLabRow(name, rocY, rocM, rocD, finding){
+  const container = document.getElementById('lab-rows');
+  const div = document.createElement('div');
+  div.className = 'entry-row';
+  const rowId = 'row-'+Math.random().toString(36).slice(2,9);
+  div.id = rowId;
+  const main = getMainRocDate();
+  const y = rocY || main.y, m = rocM || main.m, d = rocD || main.d;
+  div.innerHTML = `
+    <input type="text" class="lab-name" placeholder="Test e.g. U/A" value="${name||''}">
+    <input type="number" class="lab-y" placeholder="民國年" value="${y}" style="width:56px;">
+    <span>/</span>
+    <input type="number" class="lab-m" placeholder="月" value="${m}" style="width:40px;">
+    <span>/</span>
+    <input type="number" class="lab-d" placeholder="日" value="${d}" style="width:40px;">
+    <input type="text" class="lab-finding" placeholder="Findings, e.g. RBC>100, WBC 6-9" value="${finding||''}">
+    <button type="button" class="remove-row-btn" onclick="document.getElementById('${rowId}').remove()">✕</button>`;
+  container.appendChild(div);
+}
+
+function updateReminder(){
+  const cc = document.getElementById('chief-complaint').value;
+  if(!cc){ return; }
+  const redflags = Array.from(document.querySelectorAll('.redflag-box input[type=checkbox]:checked')).map(el=>el.value);
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  document.getElementById('reminder-output').textContent = buildExamSuggestions(cc, redflags, sex);
+}
+
+function selectComplaint(v){
+  document.getElementById('chief-complaint').value = v;
+
+  document.querySelectorAll('.cc-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.getAttribute('data-value') === v);
+  });
+
+  document.querySelectorAll('.complaint-block').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.complaint-block[data-cc="'+v+'"]').forEach(el=>el.classList.remove('hidden'));
+
+  document.querySelector('.cc-placeholder').classList.toggle('hidden', !!v);
+  document.querySelector('.icd-placeholder').classList.toggle('hidden', !!v);
+  document.querySelector('.quest-placeholder').classList.toggle('hidden', !!hasQuestionnaire[v]);
+
+  const rest = document.getElementById('rest-of-form');
+  const wasHidden = rest.classList.contains('hidden');
+  rest.classList.remove('hidden');
+  if(wasHidden){
+    rest.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  updateReminder();
+}
+document.addEventListener('change', function(e){
+  if(e.target.closest('.redflag-box')) updateReminder();
+});
+
+// ---- IPSS ----
+const ipssItems = [
+  "Incomplete emptying: sensation of not emptying bladder completely",
+  "Frequency: urinating again less than 2 hours after finishing",
+  "Intermittency: stopping and starting again several times while voiding",
+  "Urgency: difficulty postponing urination",
+  "Weak stream",
+  "Straining: needing to push or strain to begin urination",
+  "Nocturia: number of times getting up to urinate from sleep to waking"
+];
+const ipssOpts = ["0: not at all","1: less than 1 in 5 times","2: less than half the time","3: about half the time","4: more than half the time","5: almost always"];
+const ipssNightOpts = ["0: none","1: 1 time","2: 2 times","3: 3 times","4: 4 times","5: 5 or more times"];
+
+function buildQuestionBlock(container, items, opts, name, optsLast){
+  const html = items.map((q,i)=>{
+    const useOpts = (optsLast && i===items.length-1) ? optsLast : opts;
+    const radios = useOpts.map((o,j)=>`<label><input type="radio" name="${name}${i}" value="${j}">${o}</label>`).join('');
+    return `<div class="q-block"><div class="q-text">${i+1}. ${q}</div><div class="opt-row">${radios}</div></div>`;
+  }).join('');
+  container.innerHTML = html;
+}
+buildQuestionBlock(document.getElementById('ipss-questions'), ipssItems, ipssOpts, 'ipss', ipssNightOpts);
+
+// ---- OAB-SS ----
+const oabItems = [
+  "Daytime urinary frequency",
+  "Nighttime urinary frequency (nocturia)",
+  "Urgency: sudden, strong urge that is difficult to defer",
+  "Urgency incontinence: leakage associated with urgency"
+];
+const oabOpts0 = ["0: <=7 times/day","1: 8-14 times/day","2: >=15 times/day"];
+const oabOpts1 = ["0: 0 times","1: 1 time","2: 2 times","3: >=3 times"];
+const oabOpts2 = ["0: none","1: <1/week","2: >=1/week","3: ~1/day","4: 2-4/day","5: >=5/day"];
+const oabOpts3 = oabOpts2;
+function buildOAB(){
+  const opts = [oabOpts0, oabOpts1, oabOpts2, oabOpts3];
+  const html = oabItems.map((q,i)=>{
+    const radios = opts[i].map((o,j)=>`<label><input type="radio" name="oab${i}" value="${j}">${o}</label>`).join('');
+    return `<div class="q-block"><div class="q-text">${i+1}. ${q}</div><div class="opt-row">${radios}</div></div>`;
+  }).join('');
+  document.getElementById('oabss-questions').innerHTML = html;
+}
+buildOAB();
+
+// ---- IIEF-5 ----
+const iiefItems = [
+  "Confidence in achieving and maintaining an erection",
+  "Frequency of erections hard enough for penetration",
+  "Frequency of maintaining erection after penetration",
+  "Difficulty maintaining erection to completion of intercourse",
+  "Frequency of satisfaction with intercourse attempts"
+];
+const iiefOptsA = ["1: very low","2: low","3: moderate","4: high","5: very high"];
+const iiefOptsB = ["1: almost never/never","2: a few times (much less than half)","3: sometimes (about half)","4: most times (more than half)","5: almost always/always"];
+const iiefOptsC = ["1: extremely difficult","2: very difficult","3: difficult","4: slightly difficult","5: not difficult"];
+function buildIIEF(){
+  const opts = [iiefOptsA, iiefOptsB, iiefOptsB, iiefOptsC, iiefOptsB];
+  const html = iiefItems.map((q,i)=>{
+    const radios = opts[i].map((o,j)=>`<label><input type="radio" name="iief${i}" value="${j+1}">${o}</label>`).join('');
+    return `<div class="q-block"><div class="q-text">${i+1}. ${q}</div><div class="opt-row">${radios}</div></div>`;
+  }).join('');
+  document.getElementById('iief-questions').innerHTML = html;
+}
+buildIIEF();
+
+function getRadioValue(name){
+  const els = document.getElementsByName(name);
+  for(const el of els){ if(el.checked) return parseInt(el.value); }
+  return null;
+}
+
+function scoreIPSS(){
+  let total=0, answered=0;
+  for(let i=0;i<7;i++){
+    const v = getRadioValue('ipss'+i);
+    if(v!==null){ total+=v; answered++; }
+  }
+  if(answered===0) return null;
+  let severity = total<=7?"mild":(total<=19?"moderate":"severe");
+  return {total, severity, answered};
+}
+function scoreOAB(){
+  let total=0, answered=0, urgency=null;
+  for(let i=0;i<4;i++){
+    const v = getRadioValue('oab'+i);
+    if(v!==null){ total+=v; answered++; if(i===2) urgency=v; }
+  }
+  if(answered===0) return null;
+  const flag = (urgency!==null && urgency>=2 && total>=3);
+  return {total, answered, flag};
+}
+function scoreIIEF(){
+  let total=0, answered=0;
+  for(let i=0;i<5;i++){
+    const v = getRadioValue('iief'+i);
+    if(v!==null){ total+=v; answered++; }
+  }
+  if(answered===0) return null;
+  let severity;
+  if(total>=22) severity="no erectile dysfunction";
+  else if(total>=17) severity="mild";
+  else if(total>=12) severity="mild to moderate";
+  else if(total>=8) severity="moderate";
+  else severity="severe";
+  return {total, answered, severity};
+}
+
+function checkedValues(container){
+  return Array.from(container.querySelectorAll('input[type=checkbox]:checked')).map(el=>el.value);
+}
+
+function generateNote(){
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  const rocY = document.getElementById('p-date-y').value || "___";
+  const rocM = document.getElementById('p-date-m').value || "__";
+  const rocD = document.getElementById('p-date-d').value || "__";
+  const rocFullDate = `${rocY}${String(rocM).padStart(2,'0')}${String(rocD).padStart(2,'0')}`;
+  const cc = document.getElementById('chief-complaint').value;
+  const ccLabel = complaintLabelsEN[cc] || "Not specified";
+  const duration = document.getElementById('cc-duration').value || "not documented";
+  const ccNote = document.getElementById('cc-note').value;
+
+  const redflags = checkedValues(document.querySelector('.redflag-box'));
+
+  let complaintSymptoms = [];
+  let icdSelections = [];
+  const symptomBlock = cc ? document.querySelector('.complaint-block[data-cc="'+cc+'"]:not(.icd-block)') : null;
+  if(symptomBlock){
+    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('.check-grid input[type=checkbox]:checked')).map(el=>el.value);
+  }
+  const icdBlock = cc ? document.querySelector('.icd-block[data-cc="'+cc+'"]') : null;
+  if(icdBlock){
+    icdSelections = Array.from(icdBlock.querySelectorAll('input[type=checkbox]:checked')).map(el=>el.value);
+  }
+
+  const examFindings = document.getElementById('p-exam').value;
+  const planNotes = document.getElementById('p-plan').value;
+
+  // ---- SUBJECTIVE (narrative style, matches hospital template) ----
+  function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+  function joinWith(arr, conj){
+    if(arr.length===0) return '';
+    if(arr.length===1) return arr[0];
+    return arr.slice(0,-1).join(', ') + ' ' + conj + ' ' + arr[arr.length-1];
+  }
+
+  const redflagDisplay = {
+    "gross hematuria":"gross hematuria",
+    "fever/chills":"fever or chills",
+    "severe flank/abdominal colicky pain":"severe colicky flank/abdominal pain",
+    "acute urinary retention":"urinary retention",
+    "unexplained weight loss":"weight loss",
+    "bone pain":"bone pain",
+    "lower extremity weakness/numbness":"lower extremity weakness or numbness",
+    "severe acute scrotal pain (rule out torsion)":"severe scrotal pain"
+  };
+  const allRedflagValues = Object.keys(redflagDisplay);
+  const positiveRF = redflags.map(x=>redflagDisplay[x]||x);
+  const negativeRF = allRedflagValues.filter(x=>!redflags.includes(x)).map(x=>redflagDisplay[x]||x);
+
+  const symptomPhrase = complaintSymptoms.length ? complaintSymptoms.join(', ') : ccLabel.toLowerCase();
+  let mainSentence = `${cap(symptomPhrase)} was noted for ${duration}`;
+  if(ccNote) mainSentence += `, ${ccNote}`;
+  mainSentence += '.';
+
+  let rfLines = '';
+  if(positiveRF.length) rfLines += `c/o ${joinWith(positiveRF,'and')}.\n`;
+  if(negativeRF.length) rfLines += `Denied ${joinWith(negativeRF,'or')}.`;
+
+  const subjective = `[${rocFullDate}] ${mainSentence}\n${rfLines}`.trim();
+
+  // ---- OBJECTIVE ----
+  let questionnaireText = "";
+  const ipss = scoreIPSS();
+  if(ipss){
+    questionnaireText += `IPSS (International Prostate Symptom Score): ${ipss.total}/35 (${ipss.answered}/7 items answered) - ${ipss.severity} symptom severity.\n`;
+  }
+  const oab = scoreOAB();
+  if(oab){
+    questionnaireText += `OAB-SS (Overactive Bladder Symptom Score): ${oab.total}/15 (${oab.answered}/4 items answered)${oab.flag ? " - pattern consistent with overactive bladder" : ""}.\n`;
+  }
+  const iief = scoreIIEF();
+  if(iief){
+    questionnaireText += `IIEF-5 (SHIM): ${iief.total}/25 (${iief.answered}/5 items answered) - ${iief.severity}.\n`;
+  }
+
+  const imagingText = document.getElementById('p-imaging').value.trim();
+  const labEntries = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>{
+    const nm = row.querySelector('.lab-name').value || 'Lab';
+    const y = row.querySelector('.lab-y').value;
+    const m = row.querySelector('.lab-m').value;
+    const d = row.querySelector('.lab-d').value;
+    const finding = row.querySelector('.lab-finding').value;
+    return finding ? `[${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}] ${nm}: ${finding}` : null;
+  }).filter(Boolean);
+  const labsImagingText = [imagingText, ...labEntries].filter(Boolean).join('\n');
+
+  let objective =
+`Vital Signs: [to be recorded]
+
+Symptom Questionnaires:
+${questionnaireText || "No standardized questionnaire completed at this visit."}
+Physical Examination:
+${examFindings ? examFindings : "[to be completed at time of visit]"}
+
+Labs / Imaging:
+${labsImagingText || "None available at this visit; see Plan for recommended workup."}`;
+
+  // ---- ASSESSMENT ----
+  let assessment;
+  if(icdSelections.length){
+    assessment = icdSelections.map((x,i)=>`${i+1}. ${x}`).join('\n');
+  } else {
+    assessment = "Assessment pending clinical correlation, physical examination, and diagnostic workup.";
+  }
+  if(redflags.length){
+    assessment += `\n\nRed-flag symptoms present (${redflags.join(', ')}) - consider more urgent evaluation and expedited workup.`;
+  }
+
+  // ---- PLAN ----
+  const planHeading = document.getElementById('plan-heading').value;
+  let planDxSummary = document.getElementById('plan-dx-summary').value;
+  if(!planDxSummary && imagingText){
+    planDxSummary = imagingText.split('\n')[0];
+  }
+  const planItemsRaw = planNotes.split('\n').map(l=>l.trim()).filter(Boolean);
+  const planItems = planItemsRaw.map(l => l.startsWith('.') ? l : '. '+l);
+
+  let plan = '';
+  if(planHeading) plan += `Planning ${planHeading}\n`;
+  if(planDxSummary) plan += `${planDxSummary}\n`;
+  plan += `\n[${rocFullDate}]`;
+  if(planItems.length){
+    plan += `\n${planItems.join('\n')}`;
+  } else {
+    plan += `\n. [treatment plan to be determined]`;
+  }
+
+  const note =
+`SUBJECTIVE
+${subjective}
+
+OBJECTIVE
+${objective}
+
+ASSESSMENT
+${assessment}
+
+PLAN
+${plan}`;
+
+  document.getElementById('note-output').textContent = note;
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('output-section').scrollIntoView({behavior:'smooth'});
+
+  showTag('ipss-score', ipss ? `IPSS: ${ipss.total} (${ipss.severity})` : null);
+  showTag('oabss-score', oab ? `OAB-SS: ${oab.total}${oab.flag?" (OAB pattern)":""}` : null);
+  showTag('iief-score', iief ? `IIEF-5: ${iief.total} (${iief.severity})` : null);
+}
+
+function showTag(id, text){
+  const el = document.getElementById(id);
+  if(text){ el.textContent = text; el.classList.remove('hidden'); }
+}
+
+function buildExamSuggestions(cc, redflags, sex){
+  const lines = [];
+  const base = {
+    luts: [
+      "Urinalysis",
+      "Uroflowmetry + post-void residual (PVR)",
+      sex==="male" ? "PSA (if age >50 or family history, after informed discussion)" : null,
+      sex==="male" ? "Digital rectal exam (DRE) to assess prostate" : null,
+      "Renal function (Cr/eGFR)"
+    ],
+    hematuria: [
+      "Urinalysis + urine cytology",
+      "Renal and bladder ultrasound",
+      "CT urogram",
+      "Cystoscopy (especially if age >=40 or risk factors present)",
+      "Renal function panel"
+    ],
+    stone: [
+      "Non-contrast CT (CT KUB)",
+      "Urinalysis",
+      "Renal function (Cr/eGFR), electrolytes",
+      "Consider 24-hour urine metabolic stone analysis",
+      "Abdominal X-ray (KUB) for follow-up comparison"
+    ],
+    uti: [
+      "Urinalysis + urine culture and sensitivity",
+      "If recurrent or poor treatment response: renal/bladder ultrasound to rule out structural abnormality",
+      "If febrile or flank pain: renal function and inflammatory markers"
+    ],
+    incontinence: [
+      "Voiding diary",
+      "Uroflowmetry + post-void residual (PVR)",
+      "Urinalysis to rule out infection",
+      "Consider urodynamic study if indicated"
+    ],
+    ed: [
+      "Fasting glucose / HbA1c",
+      "Lipid panel",
+      "Morning total testosterone",
+      "Cardiovascular risk assessment (consider cardiology referral if indicated)"
+    ],
+    scrotal: [
+      "Scrotal ultrasound",
+      "If mass suspicious for tumor: tumor markers AFP, beta-hCG, LDH",
+      "If acute severe pain: rule out testicular torsion as surgical emergency; consider immediate urology consult and emergent ultrasound"
+    ],
+    other: [
+      "Workup to be determined based on clinical evaluation"
+    ]
+  };
+  const list = base[cc] || base.other;
+  list.filter(Boolean).forEach(x=>lines.push("- "+x));
+
+  if(redflags.length){
+    lines.push("");
+    lines.push("Additional/priority workup given red-flag symptoms:");
+    if(redflags.includes("gross hematuria")) lines.push("- Expedite urologic imaging and cystoscopy");
+    if(redflags.includes("fever/chills")) lines.push("- CBC, inflammatory markers; assess need for hospitalization");
+    if(redflags.includes("severe flank/abdominal colicky pain")) lines.push("- Expedite CT KUB to rule out obstructing stone with infection");
+    if(redflags.includes("acute urinary retention")) lines.push("- Immediate post-void residual measurement, catheterization as needed, urgent follow-up");
+    if(redflags.includes("unexplained weight loss") || redflags.includes("bone pain")) lines.push("- Consider malignancy workup (imaging, tumor markers as appropriate)");
+    if(redflags.includes("severe acute scrotal pain (rule out torsion)")) lines.push("- Treat as surgical emergency; immediate scrotal ultrasound and surgical consult");
+  }
+  return lines.join("\n");
+}
+
+function copyOutput(){
+  const text = document.getElementById('note-output').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = "Copied 已複製";
+    setTimeout(()=>btn.textContent = orig, 1500);
+  });
+}
+
+(function initDate(){
+  const today = new Date();
+  document.getElementById('p-date-y').value = today.getFullYear() - 1911;
+  document.getElementById('p-date-m').value = today.getMonth() + 1;
+  document.getElementById('p-date-d').value = today.getDate();
+})();
+addLabRow();
+</script>
+
+</body>
+</html>
