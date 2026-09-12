@@ -407,12 +407,8 @@
 <div id="login-screen">
   <div class="login-card">
     <h2>登入 Login</h2>
-    <p>僅供已授權的醫師/同事使用</p>
-    <input type="text" id="login-email" placeholder="Email">
-    <input type="password" id="login-password" placeholder="密碼 Password">
-    <button class="login-btn" onclick="doLogin()">登入</button>
-    <div style="text-align:center;font-size:0.78rem;color:var(--ink-soft);margin:10px 0;">或</div>
-    <button class="login-btn" style="background:#fff;color:var(--ink);border:1px solid var(--line);" onclick="doGoogleLogin()">使用 Google 帳號登入</button>
+    <p>僅限授權帳號使用</p>
+    <button class="login-btn" onclick="doGoogleLogin()">使用 Google 帳號登入</button>
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
@@ -856,15 +852,6 @@ function doGoogleLogin(){
   });
 }
 
-function doLogin(){
-  const email = document.getElementById('login-email').value;
-  const pw = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  errEl.textContent = '';
-  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
-    errEl.textContent = '登入失敗：帳號或密碼錯誤';
-  });
-}
 function doLogout(){
   auth.signOut();
 }
@@ -966,16 +953,16 @@ document.addEventListener('change', function(e){
 
 // ---- IPSS ----
 const ipssItems = [
-  "Incomplete emptying: sensation of not emptying bladder completely",
-  "Frequency: urinating again less than 2 hours after finishing",
-  "Intermittency: stopping and starting again several times while voiding",
-  "Urgency: difficulty postponing urination",
-  "Weak stream",
-  "Straining: needing to push or strain to begin urination",
-  "Nocturia: number of times getting up to urinate from sleep to waking"
+  "解尿後常覺得膀胱沒有排空的感覺",
+  "兩次排尿間隔常常少於兩小時",
+  "解尿時常常斷斷續續、中途停頓",
+  "常常覺得很難忍住尿意",
+  "尿流常常變得微弱",
+  "需要用力才能開始解尿",
+  "從入睡到起床，平均需要起床解尿的次數"
 ];
-const ipssOpts = ["0: not at all","1: less than 1 in 5 times","2: less than half the time","3: about half the time","4: more than half the time","5: almost always"];
-const ipssNightOpts = ["0: none","1: 1 time","2: 2 times","3: 3 times","4: 4 times","5: 5 or more times"];
+const ipssOpts = ["0：完全沒有","1：少於五分之一的機會","2：少於一半的機會","3：大約一半的機會","4：多於一半的機會","5：幾乎每次"];
+const ipssNightOpts = ["0：沒有","1：1次","2：2次","3：3次","4：4次","5：5次以上"];
 
 function buildQuestionBlock(container, items, opts, name, optsLast){
   const html = items.map((q,i)=>{
@@ -989,14 +976,14 @@ buildQuestionBlock(document.getElementById('ipss-questions'), ipssItems, ipssOpt
 
 // ---- OAB-SS ----
 const oabItems = [
-  "Daytime urinary frequency",
-  "Nighttime urinary frequency (nocturia)",
-  "Urgency: sudden, strong urge that is difficult to defer",
-  "Urgency incontinence: leakage associated with urgency"
+  "白天排尿次數",
+  "夜間排尿次數（夜尿）",
+  "是否有突然、強烈且難以忍住的尿意（尿急）",
+  "是否曾因尿急而來不及到廁所、發生漏尿"
 ];
-const oabOpts0 = ["0: <=7 times/day","1: 8-14 times/day","2: >=15 times/day"];
-const oabOpts1 = ["0: 0 times","1: 1 time","2: 2 times","3: >=3 times"];
-const oabOpts2 = ["0: none","1: <1/week","2: >=1/week","3: ~1/day","4: 2-4/day","5: >=5/day"];
+const oabOpts0 = ["0：每天≤7次","1：每天8-14次","2：每天≥15次"];
+const oabOpts1 = ["0：0次","1：1次","2：2次","3：≥3次"];
+const oabOpts2 = ["0：沒有","1：每週少於1次","2：每週≥1次","3：每天約1次","4：每天2-4次","5：每天≥5次"];
 const oabOpts3 = oabOpts2;
 function buildOAB(){
   const opts = [oabOpts0, oabOpts1, oabOpts2, oabOpts3];
@@ -1010,15 +997,15 @@ buildOAB();
 
 // ---- IIEF-5 ----
 const iiefItems = [
-  "Confidence in achieving and maintaining an erection",
-  "Frequency of erections hard enough for penetration",
-  "Frequency of maintaining erection after penetration",
-  "Difficulty maintaining erection to completion of intercourse",
-  "Frequency of satisfaction with intercourse attempts"
+  "對於能夠勃起並維持勃起的信心程度",
+  "受到性刺激時，勃起硬度足以進行插入的頻率",
+  "插入後，能夠維持勃起的頻率",
+  "性交過程中，要維持勃起直到完成的困難程度",
+  "嘗試性交時，感到滿意的頻率"
 ];
-const iiefOptsA = ["1: very low","2: low","3: moderate","4: high","5: very high"];
-const iiefOptsB = ["1: almost never/never","2: a few times (much less than half)","3: sometimes (about half)","4: most times (more than half)","5: almost always/always"];
-const iiefOptsC = ["1: extremely difficult","2: very difficult","3: difficult","4: slightly difficult","5: not difficult"];
+const iiefOptsA = ["1：非常低","2：低","3：中等","4：高","5：非常高"];
+const iiefOptsB = ["1：幾乎沒有／從未","2：偶爾（遠少於一半次數）","3：有時候（大約一半次數）","4：大部分時候（多於一半次數）","5：幾乎每次／每次"];
+const iiefOptsC = ["1：非常困難","2：很困難","3：困難","4：有點困難","5：不困難"];
 function buildIIEF(){
   const opts = [iiefOptsA, iiefOptsB, iiefOptsB, iiefOptsC, iiefOptsB];
   const html = iiefItems.map((q,i)=>{
