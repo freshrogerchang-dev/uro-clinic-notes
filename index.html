@@ -287,6 +287,22 @@
     font-size:0.82rem;
     margin-top:2px;
   }
+  .quickadd-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .quick-btn{
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    color:var(--teal-deep);
+    border-radius:12px;
+    padding:5px 11px;
+    font-size:0.78rem;
+    line-height:1.3;
+  }
+  .quick-btn:active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
   .generate-btn{
     width:100%;
     padding:14px;
@@ -659,6 +675,9 @@
 
         <div class="sub-block">
           <h3>理學檢查 Physical exam</h3>
+          <p class="hint" style="margin-top:-4px;">點選常用句可插入下方欄位，再自行微調。</p>
+          <div class="quickadd-group" id="exam-general-quickadd"></div>
+          <div id="exam-quickadd"></div>
           <div class="row">
             <div class="field" style="flex:1 1 100%;"><label>理學檢查發現（現場填寫，英文）</label><textarea id="p-exam" placeholder="e.g. Abdomen soft, non-tender. No CVA tenderness. DRE: prostate smooth, mildly enlarged, no nodules."></textarea></div>
           </div>
@@ -774,6 +793,9 @@
             <div class="field" style="flex:1 1 200px;"><label>Planning 標題（簡短診斷）</label><input type="text" id="plan-heading" placeholder="e.g. UTI / Stone"></div>
             <div class="field" style="flex:2 1 280px;"><label>診斷摘要（留空則自動帶入影像結果第一行）</label><input type="text" id="plan-dx-summary" placeholder="e.g. Left distal ureteral stone 0.3cm with mild hydronephrosis"></div>
           </div>
+          <p class="hint" style="margin-top:-2px;">點選常用醫囑可插入下方欄位（每項會自動變成一行）。</p>
+          <div class="quickadd-group" id="plan-general-quickadd"></div>
+          <div id="plan-quickadd"></div>
           <div class="row">
             <div class="field" style="flex:1 1 100%;"><label>治療計畫項目（每行一項，自動加上「. 」）</label><textarea id="p-plan" placeholder="Anti 6 days&#10;Informed if fever or chillness, please come back to ER&#10;MET first&#10;f/u 1 wk, U+K"></textarea></div>
           </div>
@@ -1015,6 +1037,129 @@ function buildIIEF(){
   document.getElementById('iief-questions').innerHTML = html;
 }
 buildIIEF();
+
+// ---- Quick-add templates: physical exam ----
+const examGeneralTemplates = [
+  {label:"一般理學正常", text:"Well-appearing, no acute distress. Abdomen soft, non-tender, no palpable mass. No CVA tenderness."}
+];
+const examTemplates = {
+  luts: [
+    {label:"攝護腺觸診正常", text:"DRE: prostate smooth, mildly enlarged, no nodules, no tenderness."},
+    {label:"下腹觸診正常", text:"No palpable bladder after voiding. Suprapubic area non-tender."}
+  ],
+  hematuria: [
+    {label:"泌尿道理學正常", text:"No flank mass. No CVA tenderness. No visible blood at urethral meatus."}
+  ],
+  stone: [
+    {label:"左側腎絞痛陽性", text:"Positive left CVA tenderness. No rebound or guarding."},
+    {label:"右側腎絞痛陽性", text:"Positive right CVA tenderness. No rebound or guarding."}
+  ],
+  uti: [
+    {label:"下腹壓痛", text:"Suprapubic tenderness present. No CVA tenderness. Afebrile at time of exam."}
+  ],
+  incontinence: [
+    {label:"骨盆理學正常", text:"No palpable bladder. No pelvic organ prolapse noted on inspection."}
+  ],
+  ed: [
+    {label:"生殖器理學正常", text:"External genitalia normal in appearance, no penile plaque or curvature. Testes descended bilaterally, no mass."}
+  ],
+  scrotal: [
+    {label:"陰囊正常", text:"No palpable scrotal mass, no tenderness. Cremasteric reflex present bilaterally."},
+    {label:"疑似扭轉(急)", text:"Affected hemiscrotum swollen and tender, cremasteric reflex absent — urgent evaluation for testicular torsion warranted."}
+  ]
+};
+
+// ---- Quick-add templates: treatment plan ----
+const planGeneralTemplates = [
+  {label:"1週後回診", text:"f/u 1 wk"},
+  {label:"2週後回診", text:"f/u 2 wks"},
+  {label:"4週後回診", text:"f/u 4 wks"},
+  {label:"發燒請返診/急診", text:"Informed if fever or chillness, please come back to ER"}
+];
+const planTemplates = {
+  luts: [
+    {label:"開始 Alpha-blocker", text:"Start alpha-blocker (e.g., Tamsulosin 0.4mg qd)"},
+    {label:"安排尿流速+PVR", text:"Arrange uroflowmetry and post-void residual (PVR)"},
+    {label:"回診前驗PSA", text:"Check PSA prior to next visit"}
+  ],
+  hematuria: [
+    {label:"安排CT urogram", text:"Arrange CT urogram"},
+    {label:"安排膀胱鏡", text:"Arrange cystoscopy"},
+    {label:"送尿液細胞學", text:"Urine cytology sent"}
+  ],
+  stone: [
+    {label:"抗生素6天", text:"Anti 6 days"},
+    {label:"MET藥物治療", text:"MET first (e.g., Tamsulosin 0.4mg qd)"},
+    {label:"回診驗尿+腎功能", text:"f/u 1 wk, U+K"},
+    {label:"濾尿留石", text:"Strain urine, save stone if passed"},
+    {label:"增加水分攝取", text:"Increase fluid intake >2L/day"}
+  ],
+  uti: [
+    {label:"依藥敏開抗生素", text:"Antibiotics per C/S sensitivity, course 7 days"},
+    {label:"回診複查U/A", text:"f/u with U/A recheck"},
+    {label:"多喝水", text:"Push fluids"}
+  ],
+  incontinence: [
+    {label:"骨盆底肌訓練", text:"Pelvic floor muscle training (Kegel exercise) instructed"},
+    {label:"膀胱訓練", text:"Bladder training instructed"},
+    {label:"排尿日誌追蹤", text:"f/u with voiding diary"}
+  ],
+  ed: [
+    {label:"PDE5抑制劑試用", text:"PDE5 inhibitor trial (e.g., Sildenafil 50mg prn)"},
+    {label:"生活型態衛教", text:"Lifestyle modification counseled (exercise, weight control, smoking cessation)"},
+    {label:"驗睪固酮", text:"Check morning testosterone level"}
+  ],
+  scrotal: [
+    {label:"安排陰囊超音波", text:"Arrange scrotal ultrasound"},
+    {label:"止痛+托高", text:"NSAID for pain control; scrotal support/elevation advised"},
+    {label:"急性惡化返診", text:"If worsening pain, return to ER immediately (r/o torsion)"}
+  ]
+};
+
+function insertPhrase(textareaId, text){
+  const el = document.getElementById(textareaId);
+  const cur = el.value;
+  if(cur.includes(text)) return;
+  el.value = cur ? cur.replace(/\s+$/,'') + ' ' + text : text;
+  el.focus();
+}
+function insertLine(textareaId, text){
+  const el = document.getElementById(textareaId);
+  const lines = el.value.split('\n').map(l=>l.trim());
+  if(lines.includes(text)) return;
+  el.value = el.value.trim() ? el.value.replace(/\n+$/,'') + '\n' + text : text;
+  el.focus();
+}
+
+function makeQuickBtn(label, onClick){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'quick-btn';
+  btn.textContent = label;
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContainerId, perComplaintTemplates, targetTextareaId, insertFn){
+  const generalEl = document.getElementById(generalContainerId);
+  generalTemplates.forEach(t=>{
+    generalEl.appendChild(makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text)));
+  });
+
+  const perComplaintEl = document.getElementById(perComplaintContainerId);
+  Object.keys(perComplaintTemplates).forEach(cc=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'complaint-block quickadd-group hidden';
+    wrap.setAttribute('data-cc', cc);
+    perComplaintTemplates[cc].forEach(t=>{
+      wrap.appendChild(makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text)));
+    });
+    perComplaintEl.appendChild(wrap);
+  });
+}
+
+buildQuickAdd('exam-general-quickadd', examGeneralTemplates, 'exam-quickadd', examTemplates, 'p-exam', insertPhrase);
+buildQuickAdd('plan-general-quickadd', planGeneralTemplates, 'plan-quickadd', planTemplates, 'p-plan', insertLine);
 
 function getRadioValue(name){
   const els = document.getElementsByName(name);
