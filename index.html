@@ -1274,7 +1274,17 @@ function currentIcdSelections(){
   return checked.concat(related);
 }
 
-const stoneDefaultPlanItems = ["Arrange KUB (X-ray)", "U/A"];
+function ensureLabRow(name, defaultFinding){
+  const already = Array.from(document.querySelectorAll('#lab-rows .lab-name'))
+    .some(el => el.value.trim().toLowerCase() === name.toLowerCase());
+  if(already) return;
+  addLabRow(name, null, null, null, defaultFinding);
+}
+
+function addStoneDefaultWorkup(){
+  ensureLabRow('U/A', 'pending');
+  ensureLabRow('KUB (X-ray)', 'ordered, pending result');
+}
 
 // Codes whose short name can be prefixed with the affected side (from the
 // stone complaint's "Pain location" selection) for a more specific Plan heading.
@@ -1323,7 +1333,7 @@ function refreshPlanHeadingFromDiagnoses(){
   }
 
   if(cc === 'stone' && values.length){
-    stoneDefaultPlanItems.forEach(item=>insertLine('p-plan', item, {silent:true}));
+    addStoneDefaultWorkup();
   }
 }
 document.getElementById('plan-heading').addEventListener('input', function(){ delete this.dataset.auto; });
