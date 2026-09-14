@@ -264,9 +264,14 @@
   .entry-row{
     display:flex;
     flex-wrap:wrap;
-    gap:6px;
-    margin-bottom:6px;
+    gap:10px;
+    margin-bottom:10px;
     align-items:center;
+  }
+  .entry-row .lab-date-group{
+    display:flex;
+    align-items:center;
+    gap:6px;
   }
   .entry-row input[type=text]{flex:2 1 160px;}
   .entry-row .remove-row-btn{
@@ -753,6 +758,8 @@
             <label><input type="checkbox" value="N20.2 - Calculus of kidney with calculus of ureter"><span class="icd-code">N20.2</span> Calculus of kidney with calculus of ureter</label>
             <label><input type="checkbox" value="N20.9 - Urinary calculus, unspecified"><span class="icd-code">N20.9</span> Urinary calculus, unspecified</label>
             <label><input type="checkbox" value="N21.0 - Calculus in bladder"><span class="icd-code">N21.0</span> Calculus in bladder</label>
+            <label><input type="checkbox" value="N13.2 - Hydronephrosis with renal and ureteral calculous obstruction"><span class="icd-code">N13.2</span> Hydronephrosis with renal and ureteral calculous obstruction</label>
+            <label><input type="checkbox" value="N13.30 - Unspecified hydronephrosis"><span class="icd-code">N13.30</span> Unspecified hydronephrosis</label>
           </div>
 
           <div class="complaint-block icd-block hidden" data-cc="uti">
@@ -947,15 +954,15 @@ function addLabRow(name, rocY, rocM, rocD, finding){
 
   const yInput = document.createElement('input');
   yInput.type = 'number'; yInput.className = 'lab-y';
-  yInput.placeholder = '民國年'; yInput.value = y; yInput.style.width = '56px';
+  yInput.placeholder = '民國年'; yInput.value = y; yInput.style.width = '72px';
 
   const mInput = document.createElement('input');
   mInput.type = 'number'; mInput.className = 'lab-m';
-  mInput.placeholder = '月'; mInput.value = m; mInput.style.width = '40px';
+  mInput.placeholder = '月'; mInput.value = m; mInput.style.width = '52px';
 
   const dInput = document.createElement('input');
   dInput.type = 'number'; dInput.className = 'lab-d';
-  dInput.placeholder = '日'; dInput.value = d; dInput.style.width = '40px';
+  dInput.placeholder = '日'; dInput.value = d; dInput.style.width = '52px';
 
   const findingInput = document.createElement('input');
   findingInput.type = 'text'; findingInput.className = 'lab-finding';
@@ -968,7 +975,11 @@ function addLabRow(name, rocY, rocM, rocD, finding){
   const slash1 = document.createElement('span'); slash1.textContent = '/';
   const slash2 = document.createElement('span'); slash2.textContent = '/';
 
-  div.append(nameInput, yInput, slash1, mInput, slash2, dInput, findingInput, removeBtn);
+  const dateGroup = document.createElement('div');
+  dateGroup.className = 'lab-date-group';
+  dateGroup.append(yInput, slash1, mInput, slash2, dInput);
+
+  div.append(nameInput, dateGroup, findingInput, removeBtn);
   container.appendChild(div);
 }
 
@@ -1158,12 +1169,12 @@ function insertPhrase(textareaId, text){
   el.value = cur ? cur.replace(/\s+$/,'') + ' ' + text : text;
   el.focus();
 }
-function insertLine(textareaId, text){
+function insertLine(textareaId, text, opts){
   const el = document.getElementById(textareaId);
   const lines = el.value.split('\n').map(l=>l.trim());
   if(lines.includes(text)) return;
   el.value = el.value.trim() ? el.value.replace(/\n+$/,'') + '\n' + text : text;
-  el.focus();
+  if(!(opts && opts.silent)) el.focus();
 }
 
 function makeQuickBtn(label, onClick){
@@ -1252,17 +1263,26 @@ function currentIcdSelections(){
   return checked.concat(related);
 }
 
+const stoneDefaultPlanItems = ["Arrange KUB (X-ray)", "U/A"];
+
 function refreshPlanHeadingFromDiagnoses(){
+  const cc = document.getElementById('chief-complaint').value;
+  const values = currentIcdSelections();
+
   const headingEl = document.getElementById('plan-heading');
   const isAutoManaged = !headingEl.value || headingEl.dataset.auto === 'true';
-  if(!isAutoManaged) return; // user has typed a custom heading; leave it alone until they clear it
-  const values = currentIcdSelections();
-  if(values.length){
-    headingEl.value = values.map(v=>parseIcdValue(v).desc).join(' / ');
-    headingEl.dataset.auto = 'true';
-  } else {
-    headingEl.value = '';
-    delete headingEl.dataset.auto;
+  if(isAutoManaged){
+    if(values.length){
+      headingEl.value = values.map(v=>parseIcdValue(v).desc).join(' / ');
+      headingEl.dataset.auto = 'true';
+    } else {
+      headingEl.value = '';
+      delete headingEl.dataset.auto;
+    }
+  }
+
+  if(cc === 'stone' && values.length){
+    stoneDefaultPlanItems.forEach(item=>insertLine('p-plan', item, {silent:true}));
   }
 }
 document.getElementById('plan-heading').addEventListener('input', function(){ delete this.dataset.auto; });
