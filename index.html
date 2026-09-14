@@ -577,8 +577,16 @@
           </div>
 
           <div class="complaint-block hidden" data-cc="stone">
-            <div class="check-grid">
-              <label><input type="checkbox" value="unilateral flank pain">單側腰痛 Unilateral flank pain</label>
+            <div class="q-block" style="border-top:none;padding-top:0;margin-top:0;">
+              <div class="q-text">疼痛部位 Pain location</div>
+              <div class="opt-row">
+                <label><input type="radio" name="stone-pain-location" value="left flank pain">左側腰痛 Left flank pain</label>
+                <label><input type="radio" name="stone-pain-location" value="right flank pain">右側腰痛 Right flank pain</label>
+                <label><input type="radio" name="stone-pain-location" value="bilateral flank pain">雙側腰痛 Bilateral flank pain</label>
+                <label><input type="radio" name="stone-pain-location" value="lower abdominal pain">下腹痛 Lower abdominal pain</label>
+              </div>
+            </div>
+            <div class="check-grid" style="margin-top:12px;">
               <label><input type="checkbox" value="pain radiating to groin">疼痛放射至鼠蹊部 Radiating to groin</label>
               <label><input type="checkbox" value="colicky pain">陣發性絞痛 Colicky pain</label>
               <label><input type="checkbox" value="nausea/vomiting">噁心嘔吐 Nausea/vomiting</label>
@@ -1017,6 +1025,7 @@ function selectComplaint(v){
 document.addEventListener('change', function(e){
   if(e.target.closest('.redflag-box')) updateReminder();
   if(e.target.closest('.icd-block') && e.target.matches('input[type=checkbox]')) refreshPlanHeadingFromDiagnoses();
+  if(e.target.name === 'stone-pain-location') refreshPlanHeadingFromDiagnoses();
 });
 
 // ---- IPSS ----
@@ -1098,7 +1107,8 @@ const examTemplates = {
   ],
   stone: [
     {label:"左側腎絞痛陽性", text:"Positive left CVA tenderness. No rebound or guarding."},
-    {label:"右側腎絞痛陽性", text:"Positive right CVA tenderness. No rebound or guarding."}
+    {label:"右側腎絞痛陽性", text:"Positive right CVA tenderness. No rebound or guarding."},
+    {label:"雙側腎絞痛陽性", text:"Positive bilateral CVA tenderness. No rebound or guarding."}
   ],
   uti: [
     {label:"下腹壓痛", text:"Suprapubic tenderness present. No CVA tenderness. Afebrile at time of exam."}
@@ -1138,7 +1148,8 @@ const planTemplates = {
     {label:"MET藥物治療", text:"MET first (e.g., Tamsulosin 0.4mg qd)"},
     {label:"回診驗尿+腎功能", text:"f/u 1 wk, U+K"},
     {label:"濾尿留石", text:"Strain urine, save stone if passed"},
-    {label:"增加水分攝取", text:"Increase fluid intake >2L/day"}
+    {label:"增加水分攝取", text:"Increase fluid intake >2L/day"},
+    {label:"安排ESWL", text:"Arrange ESWL (extracorporeal shock wave lithotripsy)"}
   ],
   uti: [
     {label:"依藥敏開抗生素", text:"Antibiotics per C/S sensitivity, course 7 days"},
@@ -1265,6 +1276,36 @@ function currentIcdSelections(){
 
 const stoneDefaultPlanItems = ["Arrange KUB (X-ray)", "U/A"];
 
+// Codes whose short name can be prefixed with the affected side (from the
+// stone complaint's "Pain location" selection) for a more specific Plan heading.
+const stoneLateralizableCodes = {
+  "N20.0": "renal stone",
+  "N20.1": "ureteral stone",
+  "N20.2": "renal and ureteral stone",
+  "N20.9": "urinary calculus",
+  "N13.2": "hydronephrosis (calculous)",
+  "N13.30": "hydronephrosis",
+  "N23": "renal colic"
+};
+const stoneLateralityBySide = {
+  "left flank pain": "Left",
+  "right flank pain": "Right",
+  "bilateral flank pain": "Bilateral"
+};
+
+function getStoneLaterality(){
+  const checked = document.querySelector('input[name="stone-pain-location"]:checked');
+  return checked ? (stoneLateralityBySide[checked.value] || null) : null;
+}
+
+function diagnosisHeadingText(value){
+  const {code, desc} = parseIcdValue(value);
+  const shortName = stoneLateralizableCodes[code];
+  const laterality = getStoneLaterality();
+  if(shortName && laterality) return `${laterality} ${shortName}`;
+  return desc;
+}
+
 function refreshPlanHeadingFromDiagnoses(){
   const cc = document.getElementById('chief-complaint').value;
   const values = currentIcdSelections();
@@ -1273,7 +1314,7 @@ function refreshPlanHeadingFromDiagnoses(){
   const isAutoManaged = !headingEl.value || headingEl.dataset.auto === 'true';
   if(isAutoManaged){
     if(values.length){
-      headingEl.value = values.map(v=>parseIcdValue(v).desc).join(' / ');
+      headingEl.value = values.map(v=>cc==='stone' ? diagnosisHeadingText(v) : parseIcdValue(v).desc).join(' / ');
       headingEl.dataset.auto = 'true';
     } else {
       headingEl.value = '';
@@ -1389,7 +1430,7 @@ function generateNote(){
   let icdSelections = [];
   const symptomBlock = cc ? document.querySelector('.complaint-block[data-cc="'+cc+'"]:not(.icd-block)') : null;
   if(symptomBlock){
-    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('.check-grid input[type=checkbox]:checked')).map(el=>el.value);
+    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked')).map(el=>el.value);
   }
   const icdBlock = cc ? document.querySelector('.icd-block[data-cc="'+cc+'"]') : null;
   if(icdBlock){
