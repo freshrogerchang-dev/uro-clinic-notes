@@ -409,6 +409,17 @@
     font-size:0.85rem;
   }
   .save-status{font-size:0.8rem;color:var(--ink-soft);margin-top:6px;}
+  .reset-btn{
+    margin-top:10px;
+    margin-left:8px;
+    background:var(--paper);
+    border:1px solid var(--rust);
+    color:var(--rust);
+    padding:8px 14px;
+    border-radius:3px;
+    font-size:0.85rem;
+  }
+  .reset-btn:active{background:var(--rust);color:#fff;}
   .disclaimer{
     font-size:0.76rem;
     color:var(--ink-soft);
@@ -820,6 +831,7 @@
       <div class="output-box" id="note-output"></div>
       <button class="copy-btn" onclick="copyOutput()">複製全部文字 Copy</button>
       <button class="save-btn" onclick="saveToFirebase()">☁ 儲存到雲端</button>
+      <button class="reset-btn" onclick="resetForm()">👤 下一位病人（清空表單）</button>
       <div class="save-status" id="save-status"></div>
     </div>
 
@@ -926,19 +938,37 @@ function addLabRow(name, rocY, rocM, rocD, finding){
   const container = document.getElementById('lab-rows');
   const div = document.createElement('div');
   div.className = 'entry-row';
-  const rowId = 'row-'+Math.random().toString(36).slice(2,9);
-  div.id = rowId;
   const main = getMainRocDate();
   const y = rocY || main.y, m = rocM || main.m, d = rocD || main.d;
-  div.innerHTML = `
-    <input type="text" class="lab-name" placeholder="Test e.g. U/A" value="${name||''}">
-    <input type="number" class="lab-y" placeholder="民國年" value="${y}" style="width:56px;">
-    <span>/</span>
-    <input type="number" class="lab-m" placeholder="月" value="${m}" style="width:40px;">
-    <span>/</span>
-    <input type="number" class="lab-d" placeholder="日" value="${d}" style="width:40px;">
-    <input type="text" class="lab-finding" placeholder="Findings, e.g. RBC>100, WBC 6-9" value="${finding||''}">
-    <button type="button" class="remove-row-btn" onclick="document.getElementById('${rowId}').remove()">✕</button>`;
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text'; nameInput.className = 'lab-name';
+  nameInput.placeholder = 'Test e.g. U/A'; nameInput.value = name || '';
+
+  const yInput = document.createElement('input');
+  yInput.type = 'number'; yInput.className = 'lab-y';
+  yInput.placeholder = '民國年'; yInput.value = y; yInput.style.width = '56px';
+
+  const mInput = document.createElement('input');
+  mInput.type = 'number'; mInput.className = 'lab-m';
+  mInput.placeholder = '月'; mInput.value = m; mInput.style.width = '40px';
+
+  const dInput = document.createElement('input');
+  dInput.type = 'number'; dInput.className = 'lab-d';
+  dInput.placeholder = '日'; dInput.value = d; dInput.style.width = '40px';
+
+  const findingInput = document.createElement('input');
+  findingInput.type = 'text'; findingInput.className = 'lab-finding';
+  findingInput.placeholder = 'Findings, e.g. RBC>100, WBC 6-9'; findingInput.value = finding || '';
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'remove-row-btn'; removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', ()=>div.remove());
+
+  const slash1 = document.createElement('span'); slash1.textContent = '/';
+  const slash2 = document.createElement('span'); slash2.textContent = '/';
+
+  div.append(nameInput, yInput, slash1, mInput, slash2, dInput, findingInput, removeBtn);
   container.appendChild(div);
 }
 
@@ -1049,7 +1079,7 @@ const examGeneralTemplates = [
 ];
 const examTemplates = {
   luts: [
-    {label:"攝護腺觸診正常", text:"DRE: prostate smooth, mildly enlarged, no nodules, no tenderness."},
+    {label:"攝護腺觸診正常", text:"DRE: prostate smooth, mildly enlarged, no nodules, no tenderness.", sex:"male"},
     {label:"下腹觸診正常", text:"No palpable bladder after voiding. Suprapubic area non-tender."}
   ],
   hematuria: [
@@ -1085,7 +1115,7 @@ const planTemplates = {
   luts: [
     {label:"開始 Alpha-blocker", text:"Start alpha-blocker (e.g., Tamsulosin 0.4mg qd)"},
     {label:"安排尿流速+PVR", text:"Arrange uroflowmetry and post-void residual (PVR)"},
-    {label:"回診前驗PSA", text:"Check PSA prior to next visit"}
+    {label:"回診前驗PSA", text:"Check PSA prior to next visit", sex:"male"}
   ],
   hematuria: [
     {label:"安排CT urogram", text:"Arrange CT urogram"},
@@ -1157,11 +1187,26 @@ function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContain
     wrap.className = 'complaint-block quickadd-group hidden';
     wrap.setAttribute('data-cc', cc);
     perComplaintTemplates[cc].forEach(t=>{
-      wrap.appendChild(makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text)));
+      const btn = makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text));
+      if(t.sex) btn.dataset.sex = t.sex;
+      wrap.appendChild(btn);
     });
     perComplaintEl.appendChild(wrap);
   });
 }
+
+function applySexFilter(){
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  document.querySelectorAll('[data-sex]').forEach(el=>{
+    const mismatch = el.dataset.sex !== sex;
+    el.classList.toggle('hidden', mismatch);
+    if(mismatch && el.classList.contains('related-icd-btn')){
+      el.classList.remove('active');
+    }
+  });
+  refreshPlanHeadingFromDiagnoses();
+}
+document.getElementById('p-sex').addEventListener('change', applySexFilter);
 
 buildQuickAdd('exam-general-quickadd', examGeneralTemplates, 'exam-quickadd', examTemplates, 'p-exam', insertPhrase);
 buildQuickAdd('plan-general-quickadd', planGeneralTemplates, 'plan-quickadd', planTemplates, 'p-plan', insertLine);
@@ -1172,7 +1217,6 @@ const relatedIcdSuggestions = {
     {code:"N39.0", desc:"Urinary tract infection, site not specified"}
   ],
   hematuria: [
-    {code:"N20.9", desc:"Urinary calculus, unspecified"},
     {code:"N39.0", desc:"Urinary tract infection, site not specified"}
   ],
   stone: [
@@ -1186,7 +1230,7 @@ const relatedIcdSuggestions = {
   ],
   incontinence: [
     {code:"N39.0", desc:"Urinary tract infection, site not specified"},
-    {code:"N40.1", desc:"Benign prostatic hyperplasia with lower urinary tract symptoms"}
+    {code:"N40.1", desc:"Benign prostatic hyperplasia with lower urinary tract symptoms", sex:"male"}
   ],
   ed: [
     {code:"E29.1", desc:"Testicular hypofunction"}
@@ -1243,6 +1287,7 @@ function buildRelatedIcdButtons(){
       btn.type = 'button';
       btn.className = 'quick-btn related-icd-btn';
       btn.dataset.value = item.code + ' - ' + item.desc;
+      if(item.sex) btn.dataset.sex = item.sex;
       btn.innerHTML = '<span class="icd-code">'+item.code+'</span> '+item.desc;
       btn.addEventListener('click', function(){
         btn.classList.toggle('active');
@@ -1255,6 +1300,7 @@ function buildRelatedIcdButtons(){
   });
 }
 buildRelatedIcdButtons();
+applySexFilter();
 
 function getRadioValue(name){
   const els = document.getElementsByName(name);
@@ -1304,9 +1350,13 @@ function checkedValues(container){
 
 function generateNote(){
   const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
-  const rocY = document.getElementById('p-date-y').value || "___";
-  const rocM = document.getElementById('p-date-m').value || "__";
-  const rocD = document.getElementById('p-date-d').value || "__";
+  const rocY = document.getElementById('p-date-y').value;
+  const rocM = document.getElementById('p-date-m').value;
+  const rocD = document.getElementById('p-date-d').value;
+  if(!rocY || !rocM || !rocD){
+    alert('請先填寫完整的看診日期（民國年/月/日）再產生病歷。');
+    return;
+  }
   const rocFullDate = `${rocY}${String(rocM).padStart(2,'0')}${String(rocD).padStart(2,'0')}`;
   const cc = document.getElementById('chief-complaint').value;
   const ccLabel = complaintLabelsEN[cc] || "Not specified";
@@ -1408,7 +1458,7 @@ ${labsImagingText || "None available at this visit; see Plan for recommended wor
     assessment = "Assessment pending clinical correlation, physical examination, and diagnostic workup.";
   }
   if(redflags.length){
-    assessment += `\n\nRed-flag symptoms present (${redflags.join(', ')}) - consider more urgent evaluation and expedited workup.`;
+    assessment += `\n\nRed-flag symptoms present (${positiveRF.join(', ')}) - consider more urgent evaluation and expedited workup.`;
   }
 
   // ---- PLAN ----
@@ -1533,13 +1583,69 @@ function copyOutput(){
   });
 }
 
-(function initDate(){
+function initDate(){
   const today = new Date();
   document.getElementById('p-date-y').value = today.getFullYear() - 1911;
   document.getElementById('p-date-m').value = today.getMonth() + 1;
   document.getElementById('p-date-d').value = today.getDate();
-})();
+}
+initDate();
 addLabRow();
+
+function resetForm(){
+  if(!confirm('確定要清空目前表單，開始下一位病人的病歷嗎？尚未儲存的內容將會遺失。')) return;
+
+  // Demographics
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-id').value = '';
+  document.getElementById('p-age').value = '';
+  document.getElementById('p-sex').value = 'male';
+  initDate();
+
+  // Chief complaint
+  document.getElementById('chief-complaint').value = '';
+  document.querySelectorAll('.cc-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cc-duration').value = '';
+  document.getElementById('cc-note').value = '';
+
+  // All checkboxes and radios across the form
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked = false);
+  document.querySelectorAll('input[type=radio]').forEach(r=>r.checked = false);
+  document.querySelectorAll('.related-icd-btn.active').forEach(b=>b.classList.remove('active'));
+
+  // Free-text fields
+  ['smoking-py','p-meds','p-allergy','p-social','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  const headingEl = document.getElementById('plan-heading');
+  headingEl.value = '';
+  delete headingEl.dataset.auto;
+
+  // Lab rows: clear back to a single blank row
+  document.getElementById('lab-rows').innerHTML = '';
+  addLabRow();
+
+  // Collapse the complaint-dependent sections back to their initial state
+  document.getElementById('rest-of-form').classList.add('hidden');
+  document.querySelectorAll('.complaint-block').forEach(el=>el.classList.add('hidden'));
+  document.querySelector('.cc-placeholder').classList.remove('hidden');
+  document.querySelector('.icd-placeholder').classList.remove('hidden');
+  document.querySelector('.quest-placeholder').classList.remove('hidden');
+  document.getElementById('reminder-output').textContent = '請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。';
+
+  // Clear generated note and score tags
+  document.getElementById('output-section').style.display = 'none';
+  document.getElementById('note-output').textContent = '';
+  document.getElementById('save-status').textContent = '';
+  ['ipss-score','oabss-score','iief-score'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.add('hidden');
+  });
+
+  applySexFilter();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
 </script>
 
 </body>
