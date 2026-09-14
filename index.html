@@ -303,6 +303,9 @@
     line-height:1.3;
   }
   .quick-btn:active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
+  .quick-btn.active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
+  .quick-btn.active .icd-code{color:#DCE7E3;}
+  .related-icd-group{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
   .generate-btn{
     width:100%;
     padding:14px;
@@ -790,7 +793,7 @@
         <div class="sub-block">
           <h3>治療計畫 Treatment plan</h3>
           <div class="row">
-            <div class="field" style="flex:1 1 200px;"><label>Planning 標題（簡短診斷）</label><input type="text" id="plan-heading" placeholder="e.g. UTI / Stone"></div>
+            <div class="field" style="flex:1 1 200px;"><label>Planning 標題（勾選 ICD-10 後自動帶入，亦可自行修改）</label><input type="text" id="plan-heading" placeholder="e.g. UTI / Stone"></div>
             <div class="field" style="flex:2 1 280px;"><label>診斷摘要（留空則自動帶入影像結果第一行）</label><input type="text" id="plan-dx-summary" placeholder="e.g. Left distal ureteral stone 0.3cm with mild hydronephrosis"></div>
           </div>
           <p class="hint" style="margin-top:-2px;">點選常用醫囑可插入下方欄位（每項會自動變成一行）。</p>
@@ -968,9 +971,11 @@ function selectComplaint(v){
     rest.scrollIntoView({behavior:'smooth', block:'start'});
   }
   updateReminder();
+  refreshPlanHeadingFromDiagnoses();
 }
 document.addEventListener('change', function(e){
   if(e.target.closest('.redflag-box')) updateReminder();
+  if(e.target.closest('.icd-block') && e.target.matches('input[type=checkbox]')) refreshPlanHeadingFromDiagnoses();
 });
 
 // ---- IPSS ----
@@ -1161,6 +1166,96 @@ function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContain
 buildQuickAdd('exam-general-quickadd', examGeneralTemplates, 'exam-quickadd', examTemplates, 'p-exam', insertPhrase);
 buildQuickAdd('plan-general-quickadd', planGeneralTemplates, 'plan-quickadd', planTemplates, 'p-plan', insertLine);
 
+// ---- Related/comorbid ICD-10 quick-select + auto-fill Plan heading ----
+const relatedIcdSuggestions = {
+  luts: [
+    {code:"N39.0", desc:"Urinary tract infection, site not specified"}
+  ],
+  hematuria: [
+    {code:"N20.9", desc:"Urinary calculus, unspecified"},
+    {code:"N39.0", desc:"Urinary tract infection, site not specified"}
+  ],
+  stone: [
+    {code:"R31.0", desc:"Gross hematuria"},
+    {code:"N23", desc:"Unspecified renal colic"},
+    {code:"N39.0", desc:"Urinary tract infection, site not specified"}
+  ],
+  uti: [
+    {code:"N20.9", desc:"Urinary calculus, unspecified"},
+    {code:"R31.9", desc:"Hematuria, unspecified"}
+  ],
+  incontinence: [
+    {code:"N39.0", desc:"Urinary tract infection, site not specified"},
+    {code:"N40.1", desc:"Benign prostatic hyperplasia with lower urinary tract symptoms"}
+  ],
+  ed: [
+    {code:"E29.1", desc:"Testicular hypofunction"}
+  ]
+};
+
+function parseIcdValue(v){
+  const idx = v.indexOf(' - ');
+  return idx>=0 ? {code:v.slice(0,idx), desc:v.slice(idx+3)} : {code:'', desc:v};
+}
+
+function currentIcdSelections(){
+  const cc = document.getElementById('chief-complaint').value;
+  if(!cc) return [];
+  const icdBlock = document.querySelector('.icd-block[data-cc="'+cc+'"]');
+  if(!icdBlock) return [];
+  const checked = Array.from(icdBlock.querySelectorAll('input[type=checkbox]:checked')).map(el=>el.value);
+  const related = Array.from(icdBlock.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value);
+  return checked.concat(related);
+}
+
+function refreshPlanHeadingFromDiagnoses(){
+  const headingEl = document.getElementById('plan-heading');
+  const isAutoManaged = !headingEl.value || headingEl.dataset.auto === 'true';
+  if(!isAutoManaged) return; // user has typed a custom heading; leave it alone until they clear it
+  const values = currentIcdSelections();
+  if(values.length){
+    headingEl.value = values.map(v=>parseIcdValue(v).desc).join(' / ');
+    headingEl.dataset.auto = 'true';
+  } else {
+    headingEl.value = '';
+    delete headingEl.dataset.auto;
+  }
+}
+document.getElementById('plan-heading').addEventListener('input', function(){ delete this.dataset.auto; });
+
+function buildRelatedIcdButtons(){
+  Object.keys(relatedIcdSuggestions).forEach(cc=>{
+    const items = relatedIcdSuggestions[cc];
+    if(!items.length) return;
+    const icdBlock = document.querySelector('.icd-block[data-cc="'+cc+'"]');
+    if(!icdBlock) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'related-icd-group';
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.style.margin = '0 0 6px';
+    hint.textContent = '可能合併/相關診斷（點選加入 Assessment 與 Plan 標題）：';
+    wrap.appendChild(hint);
+    const group = document.createElement('div');
+    group.className = 'quickadd-group';
+    items.forEach(item=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quick-btn related-icd-btn';
+      btn.dataset.value = item.code + ' - ' + item.desc;
+      btn.innerHTML = '<span class="icd-code">'+item.code+'</span> '+item.desc;
+      btn.addEventListener('click', function(){
+        btn.classList.toggle('active');
+        refreshPlanHeadingFromDiagnoses();
+      });
+      group.appendChild(btn);
+    });
+    wrap.appendChild(group);
+    icdBlock.appendChild(wrap);
+  });
+}
+buildRelatedIcdButtons();
+
 function getRadioValue(name){
   const els = document.getElementsByName(name);
   for(const el of els){ if(el.checked) return parseInt(el.value); }
@@ -1229,6 +1324,7 @@ function generateNote(){
   const icdBlock = cc ? document.querySelector('.icd-block[data-cc="'+cc+'"]') : null;
   if(icdBlock){
     icdSelections = Array.from(icdBlock.querySelectorAll('input[type=checkbox]:checked')).map(el=>el.value);
+    icdSelections = icdSelections.concat(Array.from(icdBlock.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value));
   }
 
   const examFindings = document.getElementById('p-exam').value;
