@@ -1095,7 +1095,7 @@ buildIIEF();
 
 // ---- Quick-add templates: physical exam ----
 const examGeneralTemplates = [
-  {label:"一般理學正常", text:"Well-appearing, no acute distress. Abdomen soft, non-tender, no palpable mass. No CVA tenderness."}
+  {label:"一般理學正常", text:"Well-appearing, no acute distress. Abdomen soft, non-tender, no palpable mass. No CVA tenderness.", groups:["stone-cva","scrotal-exam"]}
 ];
 const examTemplates = {
   luts: [
@@ -1106,9 +1106,10 @@ const examTemplates = {
     {label:"泌尿道理學正常", text:"No flank mass. No CVA tenderness. No visible blood at urethral meatus."}
   ],
   stone: [
-    {label:"左側腎絞痛陽性", text:"Positive left CVA tenderness. No rebound or guarding."},
-    {label:"右側腎絞痛陽性", text:"Positive right CVA tenderness. No rebound or guarding."},
-    {label:"雙側腎絞痛陽性", text:"Positive bilateral CVA tenderness. No rebound or guarding."}
+    {label:"CVA陰性", text:"No CVA tenderness bilaterally. No flank mass, no rebound or guarding.", group:"stone-cva"},
+    {label:"左側腎絞痛陽性", text:"Positive left CVA tenderness. No rebound or guarding.", group:"stone-cva"},
+    {label:"右側腎絞痛陽性", text:"Positive right CVA tenderness. No rebound or guarding.", group:"stone-cva"},
+    {label:"雙側腎絞痛陽性", text:"Positive bilateral CVA tenderness. No rebound or guarding.", group:"stone-cva"}
   ],
   uti: [
     {label:"下腹壓痛", text:"Suprapubic tenderness present. No CVA tenderness. Afebrile at time of exam."}
@@ -1120,8 +1121,8 @@ const examTemplates = {
     {label:"生殖器理學正常", text:"External genitalia normal in appearance, no penile plaque or curvature. Testes descended bilaterally, no mass."}
   ],
   scrotal: [
-    {label:"陰囊正常", text:"No palpable scrotal mass, no tenderness. Cremasteric reflex present bilaterally."},
-    {label:"疑似扭轉(急)", text:"Affected hemiscrotum swollen and tender, cremasteric reflex absent — urgent evaluation for testicular torsion warranted."}
+    {label:"陰囊正常", text:"No palpable scrotal mass, no tenderness. Cremasteric reflex present bilaterally.", group:"scrotal-exam"},
+    {label:"疑似扭轉(急)", text:"Affected hemiscrotum swollen and tender, cremasteric reflex absent — urgent evaluation for testicular torsion warranted.", group:"scrotal-exam"}
   ]
 };
 
@@ -1180,6 +1181,11 @@ function insertPhrase(textareaId, text){
   el.value = cur ? cur.replace(/\s+$/,'') + ' ' + text : text;
   el.focus();
 }
+function removePhrase(textareaId, text){
+  const el = document.getElementById(textareaId);
+  if(!el.value.includes(text)) return;
+  el.value = el.value.split(text).join(' ').replace(/\s+/g, ' ').trim();
+}
 function insertLine(textareaId, text, opts){
   const el = document.getElementById(textareaId);
   const lines = el.value.split('\n').map(l=>l.trim());
@@ -1198,9 +1204,34 @@ function makeQuickBtn(label, onClick){
 }
 
 function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContainerId, perComplaintTemplates, targetTextareaId, insertFn){
+  // Templates sharing a `group` (e.g. a normal-exam finding and its
+  // contradicting abnormal findings) are mutually exclusive: inserting one
+  // removes any other group member's text already in the field, so the
+  // note never ends up asserting both at once.
+  const groupTexts = {};
+  function groupsOf(t){ return t.groups || (t.group ? [t.group] : []); }
+  function registerGroup(t){
+    groupsOf(t).forEach(g=>{
+      (groupTexts[g] = groupTexts[g] || []).push(t.text);
+    });
+  }
+  generalTemplates.forEach(registerGroup);
+  Object.values(perComplaintTemplates).forEach(arr=>arr.forEach(registerGroup));
+
+  function makeBtn(t){
+    return makeQuickBtn(t.label, ()=>{
+      groupsOf(t).forEach(g=>{
+        groupTexts[g].forEach(otherText=>{
+          if(otherText !== t.text) removePhrase(targetTextareaId, otherText);
+        });
+      });
+      insertFn(targetTextareaId, t.text);
+    });
+  }
+
   const generalEl = document.getElementById(generalContainerId);
   generalTemplates.forEach(t=>{
-    generalEl.appendChild(makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text)));
+    generalEl.appendChild(makeBtn(t));
   });
 
   const perComplaintEl = document.getElementById(perComplaintContainerId);
@@ -1209,7 +1240,7 @@ function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContain
     wrap.className = 'complaint-block quickadd-group hidden';
     wrap.setAttribute('data-cc', cc);
     perComplaintTemplates[cc].forEach(t=>{
-      const btn = makeQuickBtn(t.label, ()=>insertFn(targetTextareaId, t.text));
+      const btn = makeBtn(t);
       if(t.sex) btn.dataset.sex = t.sex;
       wrap.appendChild(btn);
     });
