@@ -1281,9 +1281,54 @@ function ensureLabRow(name, defaultFinding){
   addLabRow(name, null, null, null, defaultFinding);
 }
 
-function addStoneDefaultWorkup(){
-  ensureLabRow('U/A', 'pending');
-  ensureLabRow('KUB (X-ray)', 'ordered, pending result');
+// Default workup automatically added to Labs/Imaging (or, for urgent
+// diagnoses, to the Plan) the first time a given ICD-10 code is selected —
+// whether checked directly or added via a related-diagnosis button, on any
+// complaint screen. Keeps baseline test orders from having to be retyped.
+const diagnosisDefaultWorkup = {
+  // Stone / hydronephrosis / renal colic
+  "N20.0": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N20.1": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N20.2": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N20.9": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N21.0": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N13.2": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N13.30": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+  "N23": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
+
+  // BPH with LUTS
+  "N40.1": { labs: [{name:"PSA", finding:"pending", sex:"male"}, {name:"Uroflow + PVR", finding:"pending"}] },
+
+  // Hematuria with suspected bladder malignancy
+  "C67.9": { labs: [{name:"Urine cytology", finding:"pending"}, {name:"Renal & bladder US", finding:"ordered, pending result"}] },
+
+  // UTI / cystitis
+  "N39.0": { labs: [{name:"Urine C/S", finding:"pending"}] },
+  "N30.00": { labs: [{name:"Urine C/S", finding:"pending"}] },
+  "N30.01": { labs: [{name:"Urine C/S", finding:"pending"}] },
+  "N30.90": { labs: [{name:"Urine C/S", finding:"pending"}] },
+
+  // Testicular torsion — surgical emergency
+  "N44.00": {
+    labs: [{name:"Scrotal US", finding:"STAT, pending"}],
+    planItems: ["URGENT: Suspect testicular torsion — emergent scrotal ultrasound (STAT) and immediate urology/surgical consult; consider direct OR exploration if clinical suspicion is high"]
+  },
+
+  // Suspected testicular malignancy
+  "C62.90": { labs: [{name:"AFP", finding:"pending"}, {name:"Beta-hCG", finding:"pending"}, {name:"LDH", finding:"pending"}] }
+};
+
+function applyDiagnosisDefaultWorkup(values){
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  values.forEach(v=>{
+    const workup = diagnosisDefaultWorkup[parseIcdValue(v).code];
+    if(!workup) return;
+    (workup.labs||[]).forEach(lab=>{
+      if(lab.sex && lab.sex !== sex) return;
+      ensureLabRow(lab.name, lab.finding);
+    });
+    (workup.planItems||[]).forEach(item=>insertLine('p-plan', item, {silent:true}));
+  });
 }
 
 // Codes whose short name can be prefixed with the affected side (from the
@@ -1332,9 +1377,7 @@ function refreshPlanHeadingFromDiagnoses(){
     }
   }
 
-  if(cc === 'stone' && values.length){
-    addStoneDefaultWorkup();
-  }
+  applyDiagnosisDefaultWorkup(values);
 }
 document.getElementById('plan-heading').addEventListener('input', function(){ delete this.dataset.auto; });
 
