@@ -1526,6 +1526,7 @@ function generateNote(){
   const planNotes = document.getElementById('p-plan').value;
 
   // ---- SUBJECTIVE (narrative style, matches hospital template) ----
+  const ipss = scoreIPSS();
   function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
   function joinWith(arr, conj){
     if(arr.length===0) return '';
@@ -1551,6 +1552,9 @@ function generateNote(){
   let mainSentence = `${cap(symptomPhrase)} was noted for ${duration}`;
   if(ccNote) mainSentence += `, ${ccNote}`;
   mainSentence += '.';
+  if(cc === 'luts' && ipss){
+    mainSentence += ` IPSS score ${ipss.total}/35 (${ipss.severity} symptom severity).`;
+  }
 
   let rfLines = '';
   if(positiveRF.length) rfLines += `c/o ${joinWith(positiveRF,'and')}.\n`;
@@ -1560,7 +1564,6 @@ function generateNote(){
 
   // ---- OBJECTIVE ----
   let questionnaireText = "";
-  const ipss = scoreIPSS();
   if(ipss){
     questionnaireText += `IPSS (International Prostate Symptom Score): ${ipss.total}/35 (${ipss.answered}/7 items answered) - ${ipss.severity} symptom severity.\n`;
   }
