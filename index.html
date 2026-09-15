@@ -559,16 +559,10 @@
           <p class="placeholder-note cc-placeholder">請先在上方點選主訴類型。</p>
 
           <div class="complaint-block hidden" data-cc="luts">
+            <p class="hint" style="margin-top:0;">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 Objective 區塊的 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用在這裡重複勾選。</p>
             <div class="check-grid">
-              <label><input type="checkbox" value="urinary frequency">頻尿 Frequency</label>
-              <label><input type="checkbox" value="nocturia">夜尿 Nocturia</label>
-              <label><input type="checkbox" value="urinary urgency">尿急 Urgency</label>
               <label><input type="checkbox" value="hesitancy">排尿遲緩 Hesitancy</label>
-              <label><input type="checkbox" value="weak urinary stream">尿流變細 Weak stream</label>
-              <label><input type="checkbox" value="intermittency">解尿中斷 Intermittency</label>
               <label><input type="checkbox" value="post-void dribbling">尿後餘瀝 Post-void dribbling</label>
-              <label><input type="checkbox" value="straining to void">解尿需用力 Straining</label>
-              <label><input type="checkbox" value="sensation of incomplete bladder emptying">解尿不乾淨感 Incomplete emptying</label>
             </div>
           </div>
 
@@ -1053,6 +1047,19 @@ const ipssItems = [
 const ipssOpts = ["0：完全沒有","1：少於五分之一的機會","2：少於一半的機會","3：大約一半的機會","4：多於一半的機會","5：幾乎每次"];
 const ipssNightOpts = ["0：沒有","1：1次","2：2次","3：3次","4：4次","5：5次以上"];
 
+// Maps each IPSS item (by index) to the same symptom phrase used in the
+// LUTS complaint-specific symptom checklist, so a positively-answered IPSS
+// item counts as that symptom being present without checking it separately.
+const ipssSymptomMap = [
+  "sensation of incomplete bladder emptying",
+  "urinary frequency",
+  "intermittency",
+  "urinary urgency",
+  "weak urinary stream",
+  "straining to void",
+  "nocturia"
+];
+
 function buildQuestionBlock(container, items, opts, name, optsLast){
   const html = items.map((q,i)=>{
     const useOpts = (optsLast && i===items.length-1) ? optsLast : opts;
@@ -1527,6 +1534,13 @@ function generateNote(){
   const symptomBlock = cc ? document.querySelector('.complaint-block[data-cc="'+cc+'"]:not(.icd-block)') : null;
   if(symptomBlock){
     complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked')).map(el=>el.value);
+  }
+  if(cc === 'luts'){
+    const ipssDerived = ipssSymptomMap.filter((symptomValue, i)=>{
+      const v = getRadioValue('ipss'+i);
+      return v !== null && v > 0;
+    });
+    complaintSymptoms = ipssDerived.concat(complaintSymptoms.filter(s=>!ipssDerived.includes(s)));
   }
   const icdBlock = cc ? document.querySelector('.icd-block[data-cc="'+cc+'"]') : null;
   if(icdBlock){
