@@ -559,11 +559,13 @@
           <p class="placeholder-note cc-placeholder">請先在上方點選主訴類型。</p>
 
           <div class="complaint-block hidden" data-cc="luts">
-            <p class="hint" style="margin-top:0;">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 Objective 區塊的 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用在這裡重複勾選。</p>
             <div class="check-grid">
               <label><input type="checkbox" value="hesitancy">排尿遲緩 Hesitancy</label>
               <label><input type="checkbox" value="post-void dribbling">尿後餘瀝 Post-void dribbling</label>
             </div>
+            <p class="hint">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用重複勾選。</p>
+            <div id="ipss-questions"></div>
+            <div id="ipss-score" class="score-tag hidden"></div>
           </div>
 
           <div class="complaint-block hidden" data-cc="hematuria">
@@ -692,10 +694,7 @@
           <h3>症狀問卷 Symptom questionnaires</h3>
           <p class="placeholder-note quest-placeholder">此主訴無標準問卷，或請先點選主訴類型。</p>
 
-          <div class="complaint-block hidden" data-cc="luts">
-            <div id="ipss-questions"></div>
-            <div id="ipss-score" class="score-tag hidden"></div>
-          </div>
+          <p class="complaint-block placeholder-note hidden" data-cc="luts">IPSS 問卷已合併至上方 Subjective「主訴相關症狀清單」中填寫，此處無需重複作答。</p>
           <div class="complaint-block hidden" data-cc="incontinence">
             <div id="oabss-questions"></div>
             <div id="oabss-score" class="score-tag hidden"></div>
@@ -1533,7 +1532,7 @@ function generateNote(){
   let icdSelections = [];
   const symptomBlock = cc ? document.querySelector('.complaint-block[data-cc="'+cc+'"]:not(.icd-block)') : null;
   if(symptomBlock){
-    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked')).map(el=>el.value);
+    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked:not([name^="ipss"])')).map(el=>el.value);
   }
   if(cc === 'luts'){
     const ipssDerived = ipssSymptomMap.filter((symptomValue, i)=>{
