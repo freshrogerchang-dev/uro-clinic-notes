@@ -259,7 +259,19 @@
     align-items:center;
     gap:8px;
   }
-  .roc-date-group input{width:68px;padding:10px 8px;font-size:1.05rem;text-align:center;}
+  .roc-date-group input{padding:10px 6px;font-size:1.05rem;text-align:center;}
+  .roc-date-group input#p-date-y{width:92px;}
+  .roc-date-group input#p-date-m,
+  .roc-date-group input#p-date-d{width:68px;}
+  .roc-date-group input::-webkit-outer-spin-button,
+  .roc-date-group input::-webkit-inner-spin-button,
+  .lab-date-group input::-webkit-outer-spin-button,
+  .lab-date-group input::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .roc-date-group input[type=number],
+  .lab-date-group input[type=number]{-moz-appearance:textfield;}
   .roc-date-group span{color:var(--ink-soft);}
   .entry-row{
     display:flex;
@@ -962,15 +974,15 @@ function addLabRow(name, rocY, rocM, rocD, finding){
 
   const yInput = document.createElement('input');
   yInput.type = 'number'; yInput.className = 'lab-y';
-  yInput.placeholder = '民國年'; yInput.value = y; yInput.style.width = '72px';
+  yInput.placeholder = '民國年'; yInput.value = y; yInput.style.width = '88px';
 
   const mInput = document.createElement('input');
   mInput.type = 'number'; mInput.className = 'lab-m';
-  mInput.placeholder = '月'; mInput.value = m; mInput.style.width = '52px';
+  mInput.placeholder = '月'; mInput.value = m; mInput.style.width = '60px';
 
   const dInput = document.createElement('input');
   dInput.type = 'number'; dInput.className = 'lab-d';
-  dInput.placeholder = '日'; dInput.value = d; dInput.style.width = '52px';
+  dInput.placeholder = '日'; dInput.value = d; dInput.style.width = '60px';
 
   const findingInput = document.createElement('input');
   findingInput.type = 'text'; findingInput.className = 'lab-finding';
