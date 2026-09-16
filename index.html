@@ -1113,7 +1113,9 @@ function loadRecordsList(){
   listEl.textContent = '載入中...';
   const uid = auth.currentUser ? auth.currentUser.uid : null;
   if(!uid){ listEl.textContent = '尚未登入。'; return; }
-  db.collection('soap_notes').where('ownerUid','==',uid).orderBy('createdAt','desc').limit(50).get()
+  // Sorted client-side (rather than via .orderBy('createdAt')) so this
+  // doesn't need a Firestore composite index on (ownerUid, createdAt).
+  db.collection('soap_notes').where('ownerUid','==',uid).get()
     .then(function(snapshot){
       recordsCache = [];
       listEl.innerHTML = '';
@@ -1121,7 +1123,14 @@ function loadRecordsList(){
         listEl.textContent = '尚無已儲存的病歷紀錄。';
         return;
       }
-      snapshot.forEach(function(doc){
+      const docs = [];
+      snapshot.forEach(doc=>docs.push(doc));
+      docs.sort((a,b)=>{
+        const at = a.data().createdAt && a.data().createdAt.toMillis ? a.data().createdAt.toMillis() : 0;
+        const bt = b.data().createdAt && b.data().createdAt.toMillis ? b.data().createdAt.toMillis() : 0;
+        return bt - at;
+      });
+      docs.slice(0, 50).forEach(function(doc){
         const data = doc.data();
         recordsCache.push(Object.assign({ id: doc.id }, data));
 
