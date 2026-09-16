@@ -644,9 +644,23 @@
               <label><input type="checkbox" value="hesitancy">排尿遲緩 Hesitancy</label>
               <label><input type="checkbox" value="post-void dribbling">尿後餘瀝 Post-void dribbling</label>
             </div>
-            <p class="hint">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用重複勾選。</p>
-            <div id="ipss-questions"></div>
-            <div id="ipss-score" class="score-tag hidden"></div>
+
+            <div data-sex="male">
+              <p class="hint">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用重複勾選。</p>
+              <div id="ipss-questions"></div>
+              <div id="ipss-score" class="score-tag hidden"></div>
+            </div>
+
+            <div data-sex="female">
+              <label style="display:flex;align-items:flex-start;gap:6px;font-size:0.86rem;color:var(--ink);cursor:pointer;margin-top:4px;">
+                <input type="checkbox" id="luts-concurrent-uti">同時懷疑泌尿道感染（如解尿灼熱、發燒）— 勾選後暫緩 OAB-SS 評分
+              </label>
+              <div id="luts-oabss-block">
+                <p class="hint">女性下泌尿道症狀不使用 IPSS，改以下方 OAB-SS 問卷評分，作答後會自動帶入病歷。</p>
+                <div id="luts-oabss-questions"></div>
+                <div id="luts-oabss-score" class="score-tag hidden"></div>
+              </div>
+            </div>
           </div>
 
           <div class="complaint-block hidden" data-cc="hematuria">
@@ -1347,6 +1361,9 @@ document.addEventListener('change', function(e){
   if(e.target.closest('.redflag-box')) updateReminder();
   if(e.target.closest('.icd-block') && e.target.matches('input[type=checkbox]')) refreshPlanHeadingFromDiagnoses();
   if(e.target.name === 'stone-pain-location') refreshPlanHeadingFromDiagnoses();
+  if(e.target.id === 'luts-concurrent-uti'){
+    document.getElementById('luts-oabss-block').classList.toggle('hidden', e.target.checked);
+  }
 });
 
 // ---- IPSS ----
@@ -1396,15 +1413,16 @@ const oabOpts0 = ["0：每天≤7次","1：每天8-14次","2：每天≥15次"];
 const oabOpts1 = ["0：0次","1：1次","2：2次","3：≥3次"];
 const oabOpts2 = ["0：沒有","1：每週少於1次","2：每週≥1次","3：每天約1次","4：每天2-4次","5：每天≥5次"];
 const oabOpts3 = oabOpts2;
-function buildOAB(){
+function buildOAB(containerId, namePrefix){
   const opts = [oabOpts0, oabOpts1, oabOpts2, oabOpts3];
   const html = oabItems.map((q,i)=>{
-    const radios = opts[i].map((o,j)=>`<label><input type="radio" name="oab${i}" value="${j}">${o}</label>`).join('');
+    const radios = opts[i].map((o,j)=>`<label><input type="radio" name="${namePrefix}${i}" value="${j}">${o}</label>`).join('');
     return `<div class="q-block"><div class="q-text">${i+1}. ${q}</div><div class="opt-row">${radios}</div></div>`;
   }).join('');
-  document.getElementById('oabss-questions').innerHTML = html;
+  document.getElementById(containerId).innerHTML = html;
 }
-buildOAB();
+buildOAB('oabss-questions', 'oab');
+buildOAB('luts-oabss-questions', 'luts-oab');
 
 // ---- IIEF-5 ----
 const iiefItems = [
@@ -1797,10 +1815,11 @@ function scoreIPSS(){
   let severity = total<=7?"mild":(total<=19?"moderate":"severe");
   return {total, severity, answered};
 }
-function scoreOAB(){
+function scoreOAB(namePrefix){
+  namePrefix = namePrefix || 'oab';
   let total=0, answered=0, urgency=null;
   for(let i=0;i<4;i++){
-    const v = getRadioValue('oab'+i);
+    const v = getRadioValue(namePrefix+i);
     if(v!==null){ total+=v; answered++; if(i===2) urgency=v; }
   }
   if(answered===0) return null;
@@ -1848,7 +1867,7 @@ function generateNote(){
   let icdSelections = [];
   const symptomBlock = cc ? document.querySelector('.complaint-block[data-cc="'+cc+'"]:not(.icd-block)') : null;
   if(symptomBlock){
-    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked, input[type=radio]:checked:not([name^="ipss"])')).map(el=>el.value);
+    complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked:not(#luts-concurrent-uti), input[type=radio]:checked:not([name^="ipss"]):not([name^="luts-oab"])')).map(el=>el.value);
   }
   if(cc === 'luts'){
     const ipssDerived = ipssSymptomMap.filter((symptomValue, i)=>{
@@ -1868,6 +1887,10 @@ function generateNote(){
 
   // ---- SUBJECTIVE (narrative style, matches hospital template) ----
   const ipss = scoreIPSS();
+  // Female LUTS patients use OAB-SS instead of IPSS (which is prostate-specific),
+  // unless concurrent UTI is suspected, in which case scoring is deferred.
+  const lutsConcurrentUti = document.getElementById('luts-concurrent-uti') ? document.getElementById('luts-concurrent-uti').checked : false;
+  const lutsOab = (cc === 'luts' && sex === 'female' && !lutsConcurrentUti) ? scoreOAB('luts-oab') : null;
   function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
   function joinWith(arr, conj){
     if(arr.length===0) return '';
@@ -1896,6 +1919,9 @@ function generateNote(){
   if(cc === 'luts' && ipss){
     mainSentence += ` IPSS score ${ipss.total}/35 (${ipss.severity} symptom severity).`;
   }
+  if(cc === 'luts' && lutsOab){
+    mainSentence += ` OAB-SS score ${lutsOab.total}/15${lutsOab.flag ? " (pattern consistent with overactive bladder)" : ""}.`;
+  }
 
   let rfLines = '';
   if(positiveRF.length) rfLines += `c/o ${joinWith(positiveRF,'and')}.\n`;
@@ -1911,6 +1937,9 @@ function generateNote(){
   const oab = scoreOAB();
   if(oab){
     questionnaireText += `OAB-SS (Overactive Bladder Symptom Score): ${oab.total}/15 (${oab.answered}/4 items answered)${oab.flag ? " - pattern consistent with overactive bladder" : ""}.\n`;
+  }
+  if(lutsOab){
+    questionnaireText += `OAB-SS (Overactive Bladder Symptom Score): ${lutsOab.total}/15 (${lutsOab.answered}/4 items answered)${lutsOab.flag ? " - pattern consistent with overactive bladder" : ""}.\n`;
   }
   const iief = scoreIIEF();
   if(iief){
@@ -1993,6 +2022,7 @@ ${plan}`;
 
   showTag('ipss-score', ipss ? `IPSS: ${ipss.total} (${ipss.severity})` : null);
   showTag('oabss-score', oab ? `OAB-SS: ${oab.total}${oab.flag?" (OAB pattern)":""}` : null);
+  showTag('luts-oabss-score', lutsOab ? `OAB-SS: ${lutsOab.total}${lutsOab.flag?" (OAB pattern)":""}` : null);
   showTag('iief-score', iief ? `IIEF-5: ${iief.total} (${iief.severity})` : null);
 }
 
@@ -2106,6 +2136,7 @@ function resetForm(){
   document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked = false);
   document.querySelectorAll('input[type=radio]').forEach(r=>r.checked = false);
   document.querySelectorAll('.related-icd-btn.active').forEach(b=>b.classList.remove('active'));
+  document.getElementById('luts-oabss-block').classList.remove('hidden');
 
   // Free-text fields
   ['smoking-py','p-meds','p-allergy','p-social','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
@@ -2135,7 +2166,7 @@ function resetForm(){
   lastFullNote = '';
   sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
   document.getElementById('save-status').textContent = '';
-  ['ipss-score','oabss-score','iief-score'].forEach(id=>{
+  ['ipss-score','oabss-score','luts-oabss-score','iief-score'].forEach(id=>{
     const el = document.getElementById(id);
     el.textContent = '';
     el.classList.add('hidden');
