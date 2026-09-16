@@ -671,7 +671,7 @@
     <p class="hint" style="margin:-6px 0 12px;">請點選最符合的主訴類型，選擇後會展開 SOAP 四大表格。</p>
     <input type="hidden" id="chief-complaint" value="">
     <div class="cc-btn-grid">
-      <button type="button" class="cc-btn" data-value="luts" onclick="selectComplaint('luts')">下泌尿道症狀<br><span>頻尿／尿急／排尿無力，疑BPH</span></button>
+      <button type="button" class="cc-btn" data-value="luts" onclick="selectComplaint('luts')">下泌尿道症狀<br><span id="luts-cc-subtitle">頻尿／尿急／排尿無力，疑BPH</span></button>
       <button type="button" class="cc-btn" data-value="hematuria" onclick="selectComplaint('hematuria')">血尿<br><span>Hematuria</span></button>
       <button type="button" class="cc-btn" data-value="stone" onclick="selectComplaint('stone')">疑似泌尿道結石<br><span>腰痛／腎絞痛</span></button>
       <button type="button" class="cc-btn" data-value="uti" onclick="selectComplaint('uti')">疑似泌尿道感染<br><span>UTI</span></button>
@@ -1696,6 +1696,9 @@ function applySexFilter(){
       if(input) input.checked = false;
     }
   });
+  document.getElementById('luts-cc-subtitle').textContent = sex === 'female'
+    ? '頻尿／尿急／膀胱過動症'
+    : '頻尿／尿急／排尿無力，疑BPH';
   refreshPlanHeadingFromDiagnoses();
 }
 document.getElementById('p-sex').addEventListener('change', applySexFilter);
@@ -1944,7 +1947,7 @@ function generateNote(){
   }
   const rocFullDate = `${rocY}${String(rocM).padStart(2,'0')}${String(rocD).padStart(2,'0')}`;
   const cc = document.getElementById('chief-complaint').value;
-  const ccLabel = complaintLabelsEN[cc] || "Not specified";
+  const ccLabel = (cc === 'luts' && sex === 'female') ? "Lower urinary tract symptoms" : (complaintLabelsEN[cc] || "Not specified");
   const duration = document.getElementById('cc-duration').value || "not documented";
   const ccNote = document.getElementById('cc-note').value;
 
