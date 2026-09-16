@@ -424,6 +424,22 @@
     margin-top:8px;
     min-height:1.2em;
   }
+  .demo-link{
+    display:block;
+    text-align:center;
+    margin-top:16px;
+    font-size:0.8rem;
+    color:var(--teal);
+    text-decoration:none;
+  }
+  .demo-link:hover{text-decoration:underline;}
+  .demo-banner{
+    background:var(--amber-bg);
+    color:var(--amber-ink);
+    font-size:0.78rem;
+    padding:3px 10px;
+    border-radius:3px;
+  }
   .topbar{
     max-width:720px;
     margin:0 auto;
@@ -513,6 +529,7 @@
     <p>僅限授權帳號使用</p>
     <button class="login-btn" onclick="doGoogleLogin()">使用 Google 帳號登入</button>
     <div class="login-error" id="login-error"></div>
+    <a class="demo-link" href="?demo=1">🔓 開放試用（不需登入，僅能產生病歷草稿，不會讀取或儲存任何資料）</a>
   </div>
 </div>
 
@@ -1027,6 +1044,34 @@ const allowedEmails = [
   "freshrogerchang@gmail.com"
 ];
 
+// ====== 開放試用模式：網址加上 ?demo=1，不需登入即可使用 ======
+// 試用模式下完全不呼叫 Firebase Auth/Firestore：只能填表產生病歷草稿，
+// 無法瀏覽病人紀錄、也無法儲存到雲端。
+const isDemoMode = new URLSearchParams(location.search).get('demo') === '1';
+
+function enterDemoMode(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-content').classList.remove('hidden');
+
+  const emailEl = document.getElementById('user-email');
+  emailEl.textContent = '🔓 試用模式（未登入）';
+  emailEl.classList.add('demo-banner');
+
+  document.getElementById('tab-btn-records').classList.add('hidden');
+
+  const saveBtn = document.querySelector('.save-btn');
+  if(saveBtn) saveBtn.classList.add('hidden');
+
+  const logoutBtn = document.querySelector('.logout-btn');
+  if(logoutBtn){
+    logoutBtn.textContent = '結束試用';
+    logoutBtn.setAttribute('onclick', '');
+    logoutBtn.addEventListener('click', function(){
+      location.href = location.pathname;
+    });
+  }
+}
+
 // Holds the most recently generated note so Copy/Save/per-section-copy
 // don't need to re-read it back out of the DOM.
 let lastFullNote = '';
@@ -1042,16 +1087,20 @@ function copySection(key, btnEl){
   });
 }
 
-auth.onAuthStateChanged(function(user){
-  if(user){
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-content').classList.remove('hidden');
-    document.getElementById('user-email').textContent = user.email;
-  } else {
-    document.getElementById('login-screen').classList.remove('hidden');
-    document.getElementById('app-content').classList.add('hidden');
-  }
-});
+if(isDemoMode){
+  enterDemoMode();
+} else {
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-content').classList.remove('hidden');
+      document.getElementById('user-email').textContent = user.email;
+    } else {
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('app-content').classList.add('hidden');
+    }
+  });
+}
 
 function doGoogleLogin(){
   const errEl = document.getElementById('login-error');
@@ -1074,6 +1123,7 @@ function doLogout(){
 
 function saveToFirebase(){
   const statusEl = document.getElementById('save-status');
+  if(isDemoMode){ statusEl.textContent = '試用模式無法儲存資料。'; return; }
   const noteText = lastFullNote;
   if(!noteText){ statusEl.textContent = '請先產生病歷再儲存。'; return; }
   statusEl.textContent = '儲存中...';
@@ -1095,6 +1145,7 @@ function saveToFirebase(){
 
 // ====== 分頁切換：新增病歷 / 病人紀錄 ======
 function switchTab(tab){
+  if(isDemoMode) return; // records browsing is unavailable in trial mode
   const isNote = tab === 'note';
   document.getElementById('tab-note-view').classList.toggle('hidden', !isNote);
   document.getElementById('tab-records-view').classList.toggle('hidden', isNote);
