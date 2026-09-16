@@ -844,11 +844,13 @@
           <p class="placeholder-note icd-placeholder">請先在上方點選主訴類型。</p>
 
           <div class="complaint-block icd-block hidden" data-cc="luts">
-            <label><input type="checkbox" value="N40.0 - Benign prostatic hyperplasia without lower urinary tract symptoms"><span class="icd-code">N40.0</span> Benign prostatic hyperplasia without LUTS</label>
-            <label><input type="checkbox" value="N40.1 - Benign prostatic hyperplasia with lower urinary tract symptoms"><span class="icd-code">N40.1</span> Benign prostatic hyperplasia with LUTS</label>
-            <label><input type="checkbox" value="N41.1 - Chronic prostatitis"><span class="icd-code">N41.1</span> Chronic prostatitis</label>
+            <label data-sex="male"><input type="checkbox" value="N40.0 - Benign prostatic hyperplasia without lower urinary tract symptoms"><span class="icd-code">N40.0</span> Benign prostatic hyperplasia without LUTS</label>
+            <label data-sex="male"><input type="checkbox" value="N40.1 - Benign prostatic hyperplasia with lower urinary tract symptoms"><span class="icd-code">N40.1</span> Benign prostatic hyperplasia with LUTS</label>
+            <label data-sex="male"><input type="checkbox" value="N41.1 - Chronic prostatitis"><span class="icd-code">N41.1</span> Chronic prostatitis</label>
             <label><input type="checkbox" value="R33.9 - Urinary retention, unspecified"><span class="icd-code">R33.9</span> Urinary retention, unspecified</label>
             <label><input type="checkbox" value="R39.15 - Urgency of urination"><span class="icd-code">R39.15</span> Urgency of urination</label>
+            <label data-sex="female"><input type="checkbox" value="R35.0 - Frequency of micturition"><span class="icd-code">R35.0</span> Frequency of micturition</label>
+            <label data-sex="female"><input type="checkbox" value="N32.81 - Overactive bladder"><span class="icd-code">N32.81</span> Overactive bladder</label>
           </div>
 
           <div class="complaint-block icd-block hidden" data-cc="hematuria">
@@ -1605,8 +1607,12 @@ function applySexFilter(){
   document.querySelectorAll('[data-sex]').forEach(el=>{
     const mismatch = el.dataset.sex !== sex;
     el.classList.toggle('hidden', mismatch);
-    if(mismatch && el.classList.contains('related-icd-btn')){
-      el.classList.remove('active');
+    if(mismatch){
+      if(el.classList.contains('related-icd-btn')){
+        el.classList.remove('active');
+      }
+      const input = el.matches('input') ? el : el.querySelector('input[type=checkbox], input[type=radio]');
+      if(input) input.checked = false;
     }
   });
   refreshPlanHeadingFromDiagnoses();
