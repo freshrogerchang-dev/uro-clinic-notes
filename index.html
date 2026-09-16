@@ -1090,6 +1090,14 @@
       <h2 style="margin:0;">已儲存的病歷</h2>
       <button type="button" class="add-row-btn" onclick="loadRecordsList()">↻ 重新整理</button>
     </div>
+    <div class="row">
+      <div class="field"><label>依病歷號搜尋 Search by MRN</label><input type="text" id="search-mrn" placeholder="e.g. M001"></div>
+      <div class="field" style="flex:2 1 220px;"><label>依診斷搜尋 Search by diagnosis（ICD-10 代碼或名稱）</label><input type="text" id="search-diagnosis" placeholder="e.g. N20.1 or ureteral stone"></div>
+    </div>
+    <div class="quickadd-group">
+      <button type="button" class="add-row-btn" onclick="exportRecordsCSV()">⬇ 匯出 CSV</button>
+      <button type="button" class="add-row-btn" onclick="exportRecordsSQL()">⬇ 匯出 SQL</button>
+    </div>
     <div id="records-list"></div>
 
     <div id="record-editor" class="hidden">
@@ -1251,8 +1259,9 @@ function switchTab(tab){
   if(!isNote) loadRecordsList();
 }
 
-// ====== 病人紀錄：瀏覽與編輯 ======
-let recordsCache = [];
+// ====== 病人紀錄：瀏覽、搜尋、編輯、匯出 ======
+let recordsCache = [];       // all fetched records for this user, sorted newest-first
+let currentFilteredRecords = []; // whatever renderRecordsList() last displayed/matched, used by export
 
 function loadRecordsList(){
   const listEl = document.getElementById('records-list');
@@ -1265,12 +1274,6 @@ function loadRecordsList(){
   // doesn't need a Firestore composite index on (ownerUid, createdAt).
   db.collection('soap_notes').where('ownerUid','==',uid).get()
     .then(function(snapshot){
-      recordsCache = [];
-      listEl.innerHTML = '';
-      if(snapshot.empty){
-        listEl.textContent = '尚無已儲存的病歷紀錄。';
-        return;
-      }
       const docs = [];
       snapshot.forEach(doc=>docs.push(doc));
       docs.sort((a,b)=>{
@@ -1278,35 +1281,123 @@ function loadRecordsList(){
         const bt = b.data().createdAt && b.data().createdAt.toMillis ? b.data().createdAt.toMillis() : 0;
         return bt - at;
       });
-      docs.slice(0, 50).forEach(function(doc){
-        const data = doc.data();
-        recordsCache.push(Object.assign({ id: doc.id }, data));
-
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'record-row';
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'record-row-name';
-        nameSpan.textContent = data.patientName || '(未填姓名)';
-
-        const metaSpan = document.createElement('span');
-        metaSpan.className = 'record-row-meta';
-        const ccLabel = complaintLabelsEN[data.chiefComplaint] || data.chiefComplaint || '';
-        metaSpan.textContent = (data.mrn ? 'MRN ' + data.mrn + ' · ' : '') + ccLabel;
-
-        const dateSpan = document.createElement('span');
-        dateSpan.className = 'record-row-date';
-        dateSpan.textContent = (data.createdAt && data.createdAt.toDate) ? data.createdAt.toDate().toLocaleString() : '';
-
-        row.append(nameSpan, metaSpan, dateSpan);
-        row.addEventListener('click', ()=>openRecordEditor(doc.id));
-        listEl.appendChild(row);
-      });
+      recordsCache = docs.map(doc=>Object.assign({ id: doc.id }, doc.data()));
+      renderRecordsList();
     })
     .catch(function(err){
       listEl.textContent = '載入失敗：' + err.message;
     });
+}
+
+function renderRecordsList(){
+  const listEl = document.getElementById('records-list');
+  const mrnQuery = document.getElementById('search-mrn').value.trim().toLowerCase();
+  const dxQuery = document.getElementById('search-diagnosis').value.trim().toLowerCase();
+  const hasFilter = !!(mrnQuery || dxQuery);
+
+  const filtered = recordsCache.filter(r=>{
+    if(mrnQuery && !(r.mrn||'').toLowerCase().includes(mrnQuery)) return false;
+    if(dxQuery && !(r.noteText||'').toLowerCase().includes(dxQuery)) return false;
+    return true;
+  });
+  currentFilteredRecords = filtered;
+
+  // Only cap the default (unfiltered) browsing view; a search shows every match.
+  const displayed = hasFilter ? filtered : filtered.slice(0, 50);
+
+  listEl.innerHTML = '';
+  if(recordsCache.length === 0){
+    listEl.textContent = '尚無已儲存的病歷紀錄。';
+    return;
+  }
+  if(displayed.length === 0){
+    listEl.textContent = '沒有符合搜尋條件的病歷。';
+    return;
+  }
+  displayed.forEach(function(record){
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'record-row';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'record-row-name';
+    nameSpan.textContent = record.patientName || '(未填姓名)';
+
+    const metaSpan = document.createElement('span');
+    metaSpan.className = 'record-row-meta';
+    const ccLabel = complaintLabelsEN[record.chiefComplaint] || record.chiefComplaint || '';
+    metaSpan.textContent = (record.mrn ? 'MRN ' + record.mrn + ' · ' : '') + ccLabel;
+
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'record-row-date';
+    dateSpan.textContent = (record.createdAt && record.createdAt.toDate) ? record.createdAt.toDate().toLocaleString() : '';
+
+    row.append(nameSpan, metaSpan, dateSpan);
+    row.addEventListener('click', ()=>openRecordEditor(record.id));
+    listEl.appendChild(row);
+  });
+}
+document.getElementById('search-mrn').addEventListener('input', renderRecordsList);
+document.getElementById('search-diagnosis').addEventListener('input', renderRecordsList);
+
+function downloadTextFile(content, filename, mimeType){
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function recordCreatedAtIso(record){
+  return (record.createdAt && record.createdAt.toDate) ? record.createdAt.toDate().toISOString() : '';
+}
+
+function csvEscape(value){
+  const str = String(value == null ? '' : value);
+  return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+function exportRecordsCSV(){
+  if(currentFilteredRecords.length === 0){ alert('沒有可匯出的病歷資料（請確認搜尋條件或先載入病歷列表）。'); return; }
+  const headers = ['MRN', 'Patient Name', 'Chief Complaint', 'Created At', 'Note Text'];
+  const rows = currentFilteredRecords.map(r=>[
+    r.mrn || '',
+    r.patientName || '',
+    complaintLabelsEN[r.chiefComplaint] || r.chiefComplaint || '',
+    recordCreatedAtIso(r),
+    r.noteText || ''
+  ].map(csvEscape).join(','));
+  const csv = [headers.join(','), ...rows].join('\r\n');
+  downloadTextFile(csv, 'patient_records_' + Date.now() + '.csv', 'text/csv;charset=utf-8;');
+}
+
+function sqlEscape(value){
+  return String(value == null ? '' : value).replace(/'/g, "''");
+}
+
+function exportRecordsSQL(){
+  if(currentFilteredRecords.length === 0){ alert('沒有可匯出的病歷資料（請確認搜尋條件或先載入病歷列表）。'); return; }
+  const lines = [
+    'CREATE TABLE IF NOT EXISTS soap_notes (',
+    '  id TEXT PRIMARY KEY,',
+    '  mrn TEXT,',
+    '  patient_name TEXT,',
+    '  chief_complaint TEXT,',
+    '  created_at TEXT,',
+    '  note_text TEXT',
+    ');',
+    ''
+  ];
+  currentFilteredRecords.forEach(r=>{
+    const values = [r.id, r.mrn || '', r.patientName || '', complaintLabelsEN[r.chiefComplaint] || r.chiefComplaint || '', recordCreatedAtIso(r), r.noteText || '']
+      .map(v=>"'" + sqlEscape(v) + "'").join(', ');
+    lines.push('INSERT INTO soap_notes (id, mrn, patient_name, chief_complaint, created_at, note_text) VALUES (' + values + ');');
+  });
+  downloadTextFile(lines.join('\n'), 'patient_records_' + Date.now() + '.sql', 'text/plain;charset=utf-8;');
 }
 
 function openRecordEditor(id){
