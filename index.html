@@ -356,6 +356,34 @@
     font-size:0.85rem;
   }
   .copy-btn:active{background:var(--teal);color:#fff;}
+  .soap-output-block{margin-bottom:14px;}
+  .soap-output-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .soap-output-letter{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:1.1rem;
+    color:var(--teal-deep);
+    line-height:1;
+  }
+  .soap-output-label{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    flex:1;
+  }
+  .copy-icon-btn{
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:4px 9px;
+    font-size:0.85rem;
+    line-height:1;
+  }
+  .copy-icon-btn:active{background:var(--teal-deep);border-color:var(--teal-deep);}
   #login-screen{
     min-height:100vh;
     display:flex;
@@ -401,12 +429,40 @@
     margin:0 auto;
     padding:8px 16px 0;
     display:flex;
-    justify-content:flex-end;
+    justify-content:space-between;
     align-items:center;
     gap:10px;
     font-size:0.8rem;
     color:var(--ink-soft);
+    flex-wrap:wrap;
   }
+  .tab-switch{display:flex;gap:6px;}
+  .tab-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:5px 12px;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+  .tab-btn.active{background:var(--teal-deep);border-color:var(--teal-deep);color:#fff;}
+  .record-row{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+    width:100%;
+    text-align:left;
+    background:#FCFDFC;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .record-row:hover{border-color:var(--teal);}
+  .record-row-name{font-weight:600;color:var(--ink);font-size:0.95rem;}
+  .record-row-meta{font-size:0.82rem;color:var(--ink-soft);}
+  .record-row-date{font-size:0.76rem;color:var(--ink-soft);}
   .logout-btn{
     background:none;
     border:1px solid var(--line);
@@ -463,9 +519,17 @@
 <div id="app-content" class="hidden">
 
 <div class="topbar">
-  <span id="user-email"></span>
-  <button class="logout-btn" onclick="doLogout()">登出 Logout</button>
+  <div class="tab-switch">
+    <button type="button" class="tab-btn active" id="tab-btn-note" onclick="switchTab('note')">新增病歷</button>
+    <button type="button" class="tab-btn" id="tab-btn-records" onclick="switchTab('records')">病人紀錄</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="user-email"></span>
+    <button class="logout-btn" onclick="doLogout()">登出 Logout</button>
+  </div>
 </div>
+
+<div id="tab-note-view">
 
 <header>
   <h1>泌尿科門診病歷輔助工具</h1>
@@ -848,7 +912,43 @@
     <div class="section" id="output-section">
       <div class="section-num">03</div>
       <h2>SOAP Note (English)</h2>
-      <div class="output-box" id="note-output"></div>
+
+      <div class="soap-output-block">
+        <div class="soap-output-header">
+          <span class="soap-output-letter">S</span>
+          <span class="soap-output-label">Subjective</span>
+          <button type="button" class="copy-icon-btn" onclick="copySection('subjective', this)" title="複製 Subjective">📋</button>
+        </div>
+        <div class="output-box" id="note-output-s"></div>
+      </div>
+
+      <div class="soap-output-block">
+        <div class="soap-output-header">
+          <span class="soap-output-letter">O</span>
+          <span class="soap-output-label">Objective</span>
+          <button type="button" class="copy-icon-btn" onclick="copySection('objective', this)" title="複製 Objective">📋</button>
+        </div>
+        <div class="output-box" id="note-output-o"></div>
+      </div>
+
+      <div class="soap-output-block">
+        <div class="soap-output-header">
+          <span class="soap-output-letter">A</span>
+          <span class="soap-output-label">Assessment</span>
+          <button type="button" class="copy-icon-btn" onclick="copySection('assessment', this)" title="複製 Assessment">📋</button>
+        </div>
+        <div class="output-box" id="note-output-a"></div>
+      </div>
+
+      <div class="soap-output-block">
+        <div class="soap-output-header">
+          <span class="soap-output-letter">P</span>
+          <span class="soap-output-label">Plan</span>
+          <button type="button" class="copy-icon-btn" onclick="copySection('plan', this)" title="複製 Plan">📋</button>
+        </div>
+        <div class="output-box" id="note-output-p"></div>
+      </div>
+
       <button class="copy-btn" onclick="copyOutput()">複製全部文字 Copy</button>
       <button class="save-btn" onclick="saveToFirebase()">☁ 儲存到雲端</button>
       <button class="reset-btn" onclick="resetForm()">👤 下一位病人（清空表單）</button>
@@ -860,6 +960,50 @@
 </main>
 
 <p class="disclaimer">本工具僅協助整理病人自述資訊、提示相關 ICD-10 代碼與常見檢查項目，最終診斷、理學檢查與檢查安排仍須由醫師依臨床判斷確認。</p>
+
+</div><!-- /tab-note-view -->
+
+<div id="tab-records-view" class="hidden">
+
+<header>
+  <h1>病人紀錄 Patient Records</h1>
+  <p>瀏覽並編輯已儲存的病歷紀錄。</p>
+</header>
+
+<main>
+  <div class="section">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;">已儲存的病歷</h2>
+      <button type="button" class="add-row-btn" onclick="loadRecordsList()">↻ 重新整理</button>
+    </div>
+    <div id="records-list"></div>
+
+    <div id="record-editor" class="hidden">
+      <input type="hidden" id="editor-record-id">
+      <div class="row">
+        <div class="field"><label>姓名 Name</label><input type="text" id="editor-patient-name"></div>
+        <div class="field"><label>病歷號 MRN</label><input type="text" id="editor-mrn"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>主訴類型</label>
+          <div id="editor-cc-label" style="font-size:0.92rem;padding:4px 0;color:var(--ink-soft);"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>病歷內容 Note（可編輯）</label>
+          <textarea id="editor-note-text" style="min-height:320px;font-family:'IBM Plex Sans',monospace;font-size:0.88rem;"></textarea>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveRecordEdit()">儲存修改</button>
+      <button class="reset-btn" onclick="closeRecordEditor()">返回列表</button>
+      <div class="save-status" id="editor-status"></div>
+    </div>
+  </div>
+</main>
+
+</div><!-- /tab-records-view -->
 
 </div><!-- /app-content -->
 
@@ -882,6 +1026,21 @@ const db = firebase.firestore();
 const allowedEmails = [
   "freshrogerchang@gmail.com"
 ];
+
+// Holds the most recently generated note so Copy/Save/per-section-copy
+// don't need to re-read it back out of the DOM.
+let lastFullNote = '';
+let sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
+
+function copySection(key, btnEl){
+  const text = sectionTexts[key];
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✓';
+    setTimeout(()=>{ btnEl.textContent = orig; }, 1200);
+  });
+}
 
 auth.onAuthStateChanged(function(user){
   if(user){
@@ -915,7 +1074,7 @@ function doLogout(){
 
 function saveToFirebase(){
   const statusEl = document.getElementById('save-status');
-  const noteText = document.getElementById('note-output').textContent;
+  const noteText = lastFullNote;
   if(!noteText){ statusEl.textContent = '請先產生病歷再儲存。'; return; }
   statusEl.textContent = '儲存中...';
   db.collection('soap_notes').add({
@@ -929,6 +1088,103 @@ function saveToFirebase(){
   }).then(function(){
     statusEl.textContent = '已儲存 ✓';
     setTimeout(()=>{ statusEl.textContent=''; }, 2500);
+  }).catch(function(err){
+    statusEl.textContent = '儲存失敗：' + err.message;
+  });
+}
+
+// ====== 分頁切換：新增病歷 / 病人紀錄 ======
+function switchTab(tab){
+  const isNote = tab === 'note';
+  document.getElementById('tab-note-view').classList.toggle('hidden', !isNote);
+  document.getElementById('tab-records-view').classList.toggle('hidden', isNote);
+  document.getElementById('tab-btn-note').classList.toggle('active', isNote);
+  document.getElementById('tab-btn-records').classList.toggle('active', !isNote);
+  if(!isNote) loadRecordsList();
+}
+
+// ====== 病人紀錄：瀏覽與編輯 ======
+let recordsCache = [];
+
+function loadRecordsList(){
+  const listEl = document.getElementById('records-list');
+  document.getElementById('record-editor').classList.add('hidden');
+  listEl.classList.remove('hidden');
+  listEl.textContent = '載入中...';
+  const uid = auth.currentUser ? auth.currentUser.uid : null;
+  if(!uid){ listEl.textContent = '尚未登入。'; return; }
+  db.collection('soap_notes').where('ownerUid','==',uid).orderBy('createdAt','desc').limit(50).get()
+    .then(function(snapshot){
+      recordsCache = [];
+      listEl.innerHTML = '';
+      if(snapshot.empty){
+        listEl.textContent = '尚無已儲存的病歷紀錄。';
+        return;
+      }
+      snapshot.forEach(function(doc){
+        const data = doc.data();
+        recordsCache.push(Object.assign({ id: doc.id }, data));
+
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'record-row';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'record-row-name';
+        nameSpan.textContent = data.patientName || '(未填姓名)';
+
+        const metaSpan = document.createElement('span');
+        metaSpan.className = 'record-row-meta';
+        const ccLabel = complaintLabelsEN[data.chiefComplaint] || data.chiefComplaint || '';
+        metaSpan.textContent = (data.mrn ? 'MRN ' + data.mrn + ' · ' : '') + ccLabel;
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'record-row-date';
+        dateSpan.textContent = (data.createdAt && data.createdAt.toDate) ? data.createdAt.toDate().toLocaleString() : '';
+
+        row.append(nameSpan, metaSpan, dateSpan);
+        row.addEventListener('click', ()=>openRecordEditor(doc.id));
+        listEl.appendChild(row);
+      });
+    })
+    .catch(function(err){
+      listEl.textContent = '載入失敗：' + err.message;
+    });
+}
+
+function openRecordEditor(id){
+  const record = recordsCache.find(r=>r.id===id);
+  if(!record) return;
+  document.getElementById('records-list').classList.add('hidden');
+  const editor = document.getElementById('record-editor');
+  editor.classList.remove('hidden');
+  document.getElementById('editor-record-id').value = id;
+  document.getElementById('editor-patient-name').value = record.patientName || '';
+  document.getElementById('editor-mrn').value = record.mrn || '';
+  document.getElementById('editor-cc-label').textContent = complaintLabelsEN[record.chiefComplaint] || record.chiefComplaint || '(未分類)';
+  document.getElementById('editor-note-text').value = record.noteText || '';
+  document.getElementById('editor-status').textContent = '';
+}
+
+function closeRecordEditor(){
+  document.getElementById('record-editor').classList.add('hidden');
+  document.getElementById('records-list').classList.remove('hidden');
+}
+
+function saveRecordEdit(){
+  const id = document.getElementById('editor-record-id').value;
+  const statusEl = document.getElementById('editor-status');
+  if(!id) return;
+  statusEl.textContent = '儲存中...';
+  db.collection('soap_notes').doc(id).update({
+    patientName: document.getElementById('editor-patient-name').value,
+    mrn: document.getElementById('editor-mrn').value,
+    noteText: document.getElementById('editor-note-text').value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    statusEl.textContent = '已儲存 ✓';
+    setTimeout(()=>{ statusEl.textContent=''; }, 2000);
+    loadRecordsList();
   }).catch(function(err){
     statusEl.textContent = '儲存失敗：' + err.message;
   });
@@ -1666,7 +1922,12 @@ ${assessment}
 PLAN
 ${plan}`;
 
-  document.getElementById('note-output').textContent = note;
+  sectionTexts = { subjective, objective, assessment, plan };
+  lastFullNote = note;
+  document.getElementById('note-output-s').textContent = subjective;
+  document.getElementById('note-output-o').textContent = objective;
+  document.getElementById('note-output-a').textContent = assessment;
+  document.getElementById('note-output-p').textContent = plan;
   document.getElementById('output-section').style.display = 'block';
   document.getElementById('output-section').scrollIntoView({behavior:'smooth'});
 
@@ -1747,7 +2008,7 @@ function buildExamSuggestions(cc, redflags, sex){
 }
 
 function copyOutput(){
-  const text = document.getElementById('note-output').textContent;
+  const text = lastFullNote;
   navigator.clipboard.writeText(text).then(()=>{
     const btn = document.querySelector('.copy-btn');
     const orig = btn.textContent;
@@ -1808,7 +2069,11 @@ function resetForm(){
 
   // Clear generated note and score tags
   document.getElementById('output-section').style.display = 'none';
-  document.getElementById('note-output').textContent = '';
+  ['note-output-s','note-output-o','note-output-a','note-output-p'].forEach(id=>{
+    document.getElementById(id).textContent = '';
+  });
+  lastFullNote = '';
+  sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
   document.getElementById('save-status').textContent = '';
   ['ipss-score','oabss-score','iief-score'].forEach(id=>{
     const el = document.getElementById(id);
