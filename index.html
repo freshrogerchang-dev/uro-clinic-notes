@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1D3E42">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231D3E42'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia,serif'%3EU%3C/text%3E%3C/svg%3E">
 <title>泌尿科門診病歷輔助工具</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
@@ -15,13 +17,20 @@
     --line:#D9DED8;
     --teal:#2F5D62;
     --teal-deep:#1D3E42;
+    --teal-light:#E4EEEC;
     --rust:#A1442B;
     --rust-bg:#F6E9E4;
     --amber-bg:#FBF3DE;
     --amber-ink:#8A6A17;
     --code-bg:#EAF0EC;
+    --shadow-sm:0 1px 3px rgba(29,62,66,0.07), 0 1px 2px rgba(29,62,66,0.04);
+    --shadow-md:0 6px 16px rgba(29,62,66,0.10);
+    --shadow-lg:0 16px 36px rgba(29,62,66,0.16);
+    --radius-sm:6px;
+    --radius-md:10px;
   }
   *{box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
   body{
     margin:0;
     background:var(--bg);
@@ -30,16 +39,42 @@
     line-height:1.6;
     padding-bottom:80px;
   }
+  ::selection{background:var(--teal-light);color:var(--teal-deep);}
+  input[type=checkbox], input[type=radio]{
+    accent-color:var(--teal-deep);
+    width:16px;
+    height:16px;
+    cursor:pointer;
+    flex:0 0 auto;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--teal);
+    box-shadow:0 0 0 3px rgba(47,93,98,0.15);
+  }
   header{
-    padding:28px 20px 20px;
+    padding:30px 20px 24px;
     border-bottom:1px solid var(--line);
     background:var(--paper);
+    position:relative;
+  }
+  header::after{
+    content:'';
+    position:absolute;
+    left:0;right:0;bottom:-1px;
+    height:3px;
+    background:linear-gradient(90deg, var(--teal-deep), var(--teal) 55%, transparent);
   }
   header h1{
     font-family:'Source Serif 4', serif;
     font-weight:600;
-    font-size:1.5rem;
-    margin:0 0 4px;
+    font-size:1.55rem;
+    letter-spacing:-0.01em;
+    margin:0 0 5px;
     color:var(--teal-deep);
   }
   header p{
@@ -55,36 +90,39 @@
   .section{
     background:var(--paper);
     border:1px solid var(--line);
-    border-radius:4px;
-    padding:18px 18px 20px;
-    margin-bottom:14px;
+    border-radius:var(--radius-md);
+    padding:20px 20px 22px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow-sm);
   }
   .section-num{
     font-family:'Source Serif 4', serif;
     font-size:0.78rem;
     color:var(--teal);
-    letter-spacing:0.02em;
+    letter-spacing:0.04em;
     margin-bottom:2px;
+    font-weight:600;
   }
   .section h2{
     font-family:'Source Serif 4', serif;
-    font-size:1.08rem;
+    font-size:1.1rem;
     font-weight:600;
     margin:0 0 12px;
     color:var(--ink);
   }
   .soap-group{
     border:1px solid var(--line);
-    border-radius:6px;
-    margin-bottom:18px;
+    border-radius:var(--radius-md);
+    margin-bottom:20px;
     overflow:hidden;
+    box-shadow:var(--shadow-sm);
   }
   .soap-header{
     display:flex;
     align-items:baseline;
     gap:10px;
-    padding:14px 18px;
-    background:var(--teal-deep);
+    padding:15px 18px;
+    background:linear-gradient(135deg, var(--teal-deep), #16292c);
     color:#fff;
   }
   .soap-letter{
@@ -138,13 +176,14 @@
   }
   input[type=text], input[type=number], select, textarea{
     border:1px solid var(--line);
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     padding:8px 10px;
     font-size:0.95rem;
     font-family:inherit;
     color:var(--ink);
     background:#FCFDFC;
     width:100%;
+    transition:border-color .15s ease, box-shadow .15s ease;
   }
   textarea{resize:vertical;min-height:56px;}
   fieldset{border:none;padding:0;margin:0 0 10px;}
@@ -232,13 +271,13 @@
     text-align:left;
     background:#FCFDFC;
     border:1px solid var(--line);
-    border-radius:4px;
+    border-radius:var(--radius-sm);
     padding:12px 12px;
     font-size:0.92rem;
     font-weight:500;
     color:var(--ink);
     line-height:1.4;
-    transition:border-color .15s, background .15s;
+    transition:border-color .15s, background .15s, box-shadow .15s, transform .15s;
   }
   .cc-btn span{
     display:block;
@@ -247,12 +286,14 @@
     color:var(--ink-soft);
     margin-top:2px;
   }
-  .cc-btn:hover{border-color:var(--teal);}
+  .cc-btn:hover{border-color:var(--teal);box-shadow:var(--shadow-sm);transform:translateY(-1px);}
   .cc-btn.active{
     background:var(--teal-deep);
     border-color:var(--teal-deep);
     color:#fff;
+    box-shadow:var(--shadow-md);
   }
+  .cc-btn.active:hover{transform:none;}
   .cc-btn.active span{color:#DCE7E3;}
   .roc-date-group{
     display:flex;
@@ -318,7 +359,9 @@
     padding:5px 11px;
     font-size:0.78rem;
     line-height:1.3;
+    transition:background .15s, border-color .15s, color .15s;
   }
+  .quick-btn:hover{border-color:var(--teal);}
   .quick-btn:active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
   .quick-btn.active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
   .quick-btn.active .icd-code{color:#DCE7E3;}
@@ -331,10 +374,13 @@
     background:var(--teal-deep);
     color:#fff;
     border:none;
-    border-radius:4px;
+    border-radius:var(--radius-sm);
     margin-top:4px;
+    box-shadow:var(--shadow-md);
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
   }
-  .generate-btn:active{background:var(--teal);}
+  .generate-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
+  .generate-btn:active{background:var(--teal);transform:translateY(0);box-shadow:var(--shadow-sm);}
   #output-section{display:none;}
   .output-box{
     white-space:pre-wrap;
@@ -352,9 +398,11 @@
     border:1px solid var(--teal);
     color:var(--teal);
     padding:8px 14px;
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     font-size:0.85rem;
+    transition:background .15s, color .15s, box-shadow .15s;
   }
+  .copy-btn:hover{box-shadow:var(--shadow-sm);}
   .copy-btn:active{background:var(--teal);color:#fff;}
   .soap-output-block{margin-bottom:14px;}
   .soap-output-header{
@@ -378,11 +426,13 @@
   .copy-icon-btn{
     background:var(--code-bg);
     border:1px solid var(--line);
-    border-radius:4px;
+    border-radius:var(--radius-sm);
     padding:4px 9px;
     font-size:0.85rem;
     line-height:1;
+    transition:border-color .15s, background .15s;
   }
+  .copy-icon-btn:hover{border-color:var(--teal);}
   .copy-icon-btn:active{background:var(--teal-deep);border-color:var(--teal-deep);}
   #login-screen{
     min-height:100vh;
@@ -390,18 +440,31 @@
     align-items:center;
     justify-content:center;
     padding:20px;
+    background:radial-gradient(circle at 25% 15%, #F4F8F2 0%, var(--bg) 55%);
   }
   .login-card{
     background:var(--paper);
     border:1px solid var(--line);
-    border-radius:6px;
-    padding:28px 24px;
+    border-radius:var(--radius-md);
+    padding:32px 28px;
     width:100%;
-    max-width:320px;
+    max-width:340px;
+    box-shadow:var(--shadow-lg);
+  }
+  .login-icon{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:var(--teal-light);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.4rem;
+    margin-bottom:14px;
   }
   .login-card h2{
     font-family:'Source Serif 4', serif;
-    font-size:1.15rem;
+    font-size:1.25rem;
     margin:0 0 4px;
     color:var(--teal-deep);
   }
@@ -413,11 +476,14 @@
     background:var(--teal-deep);
     color:#fff;
     border:none;
-    border-radius:4px;
+    border-radius:var(--radius-sm);
     font-size:0.95rem;
     font-weight:600;
     margin-top:4px;
+    box-shadow:var(--shadow-md);
+    transition:transform .15s ease, box-shadow .15s ease;
   }
+  .login-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
   .login-error{
     color:var(--rust);
     font-size:0.8rem;
@@ -456,12 +522,15 @@
   .tab-btn{
     background:none;
     border:1px solid var(--line);
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     padding:5px 12px;
     font-size:0.8rem;
     color:var(--ink-soft);
+    transition:background .15s, border-color .15s, color .15s;
   }
+  .tab-btn:hover{border-color:var(--teal);color:var(--teal-deep);}
   .tab-btn.active{background:var(--teal-deep);border-color:var(--teal-deep);color:#fff;}
+  .tab-btn.active:hover{color:#fff;}
   .record-row{
     display:flex;
     flex-direction:column;
@@ -471,22 +540,25 @@
     text-align:left;
     background:#FCFDFC;
     border:1px solid var(--line);
-    border-radius:4px;
+    border-radius:var(--radius-sm);
     padding:10px 12px;
     margin-bottom:8px;
+    transition:border-color .15s, box-shadow .15s, transform .15s;
   }
-  .record-row:hover{border-color:var(--teal);}
+  .record-row:hover{border-color:var(--teal);box-shadow:var(--shadow-sm);transform:translateY(-1px);}
   .record-row-name{font-weight:600;color:var(--ink);font-size:0.95rem;}
   .record-row-meta{font-size:0.82rem;color:var(--ink-soft);}
   .record-row-date{font-size:0.76rem;color:var(--ink-soft);}
   .logout-btn{
     background:none;
     border:1px solid var(--line);
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     padding:4px 10px;
     font-size:0.78rem;
     color:var(--ink-soft);
+    transition:border-color .15s, color .15s;
   }
+  .logout-btn:hover{border-color:var(--rust);color:var(--rust);}
   .save-btn{
     margin-top:10px;
     margin-left:8px;
@@ -494,9 +566,11 @@
     border:1px solid var(--teal);
     color:#fff;
     padding:8px 14px;
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     font-size:0.85rem;
+    transition:box-shadow .15s, transform .15s;
   }
+  .save-btn:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
   .save-status{font-size:0.8rem;color:var(--ink-soft);margin-top:6px;}
   .reset-btn{
     margin-top:10px;
@@ -505,16 +579,22 @@
     border:1px solid var(--rust);
     color:var(--rust);
     padding:8px 14px;
-    border-radius:3px;
+    border-radius:var(--radius-sm);
     font-size:0.85rem;
+    transition:background .15s, color .15s;
   }
+  .reset-btn:hover{background:var(--rust-bg);}
   .reset-btn:active{background:var(--rust);color:#fff;}
   .disclaimer{
     font-size:0.76rem;
     color:var(--ink-soft);
     text-align:center;
-    margin-top:18px;
-    padding:0 20px;
+    margin:20px auto 0;
+    padding:12px 20px;
+    max-width:640px;
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
   }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -525,6 +605,7 @@
 
 <div id="login-screen">
   <div class="login-card">
+    <div class="login-icon">🩺</div>
     <h2>登入 Login</h2>
     <p>僅限授權帳號使用</p>
     <button class="login-btn" onclick="doGoogleLogin()">使用 Google 帳號登入</button>
@@ -549,7 +630,7 @@
 <div id="tab-note-view">
 
 <header>
-  <h1>泌尿科門診病歷輔助工具</h1>
+  <h1>🩺 泌尿科門診病歷輔助工具</h1>
   <p>填寫病人基本資料與主訴後，依 SOAP 四大區塊填寫細節，自動整理成英文 SOAP 病歷草稿。</p>
 </header>
 
