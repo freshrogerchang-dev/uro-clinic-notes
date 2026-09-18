@@ -699,7 +699,7 @@
       </div>
       <div class="soap-body">
 
-        <div class="sub-block">
+        <div class="sub-block" id="redflag-subblock">
           <h3>紅旗警訊症狀 Red-flag symptoms（務必確認）</h3>
           <fieldset class="redflag-box">
             <legend>是否出現以下情形</legend>
@@ -806,7 +806,18 @@
           </div>
 
           <div class="complaint-block hidden" data-cc="ed">
-            <div class="check-grid">
+            <div class="q-block" style="border-top:none;padding-top:0;margin-top:0;">
+              <div class="q-text">勃起硬度分級 Erection Hardness Score (EHS)</div>
+              <div class="opt-row">
+                <label><input type="radio" name="ed-ehs" value="EHS grade 0 (no penile enlargement)">0：無腫脹</label>
+                <label><input type="radio" name="ed-ehs" value="EHS grade 1 (penis is larger but not hard)">1：變大但不硬</label>
+                <label><input type="radio" name="ed-ehs" value="EHS grade 2 (penis is hard but not hard enough for penetration)">2：硬但不足以插入</label>
+                <label><input type="radio" name="ed-ehs" value="EHS grade 3 (penis is hard enough for penetration but not fully hard)">3：足以插入但未完全硬</label>
+                <label><input type="radio" name="ed-ehs" value="EHS grade 4 (penis is completely hard and fully rigid)">4：完全堅硬</label>
+              </div>
+            </div>
+            <div class="check-grid" style="margin-top:12px;">
+              <label><input type="checkbox" value="prior use of PDE5 inhibitor (e.g., sildenafil/tadalafil)">曾使用PDE5 inhibitor（威爾鋼/犀利士等） Prior PDE5 inhibitor use</label>
               <label><input type="checkbox" value="diabetes mellitus">有糖尿病 Diabetes</label>
               <label><input type="checkbox" value="hypertension">有高血壓 Hypertension</label>
               <label><input type="checkbox" value="cardiovascular disease">有心血管疾病 Cardiovascular disease</label>
@@ -1518,6 +1529,16 @@ function selectComplaint(v){
   document.querySelectorAll('.complaint-block').forEach(el=>el.classList.add('hidden'));
   document.querySelectorAll('.complaint-block[data-cc="'+v+'"]').forEach(el=>el.classList.remove('hidden'));
 
+  // The urologic-emergency red-flag screen (hematuria, colic, retention,
+  // weight loss, bone pain, scrotal pain) isn't relevant to a pure
+  // erectile-dysfunction visit, so skip it for that complaint.
+  const redflagBlock = document.getElementById('redflag-subblock');
+  const showRedflags = v !== 'ed';
+  redflagBlock.classList.toggle('hidden', !showRedflags);
+  if(!showRedflags){
+    redflagBlock.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  }
+
   document.querySelector('.cc-placeholder').classList.toggle('hidden', !!v);
   document.querySelector('.icd-placeholder').classList.toggle('hidden', !!v);
   document.querySelector('.quest-placeholder').classList.toggle('hidden', !!hasQuestionnaire[v]);
@@ -2042,7 +2063,7 @@ function generateNote(){
   const duration = document.getElementById('cc-duration').value || "not documented";
   const ccNote = document.getElementById('cc-note').value;
 
-  const redflags = checkedValues(document.querySelector('.redflag-box'));
+  const redflags = cc === 'ed' ? [] : checkedValues(document.querySelector('.redflag-box'));
 
   let complaintSymptoms = [];
   let icdSelections = [];
@@ -2091,7 +2112,7 @@ function generateNote(){
   };
   const allRedflagValues = Object.keys(redflagDisplay);
   const positiveRF = redflags.map(x=>redflagDisplay[x]||x);
-  const negativeRF = allRedflagValues.filter(x=>!redflags.includes(x)).map(x=>redflagDisplay[x]||x);
+  const negativeRF = cc === 'ed' ? [] : allRedflagValues.filter(x=>!redflags.includes(x)).map(x=>redflagDisplay[x]||x);
 
   const symptomPhrase = complaintSymptoms.length ? complaintSymptoms.join(', ') : ccLabel.toLowerCase();
   let mainSentence = `${cap(symptomPhrase)} was noted for ${duration}`;
@@ -2170,7 +2191,7 @@ ${labsImagingText || "None available at this visit; see Plan for recommended wor
   const planItems = planItemsRaw.map(l => l.startsWith('.') ? l : '. '+l);
 
   let plan = '';
-  if(planHeading) plan += `Planning ${planHeading}\n`;
+  if(planHeading) plan += `${planHeading}\n`;
   if(planDxSummary) plan += `${planDxSummary}\n`;
   plan += `\n[${rocFullDate}]`;
   if(planItems.length){
