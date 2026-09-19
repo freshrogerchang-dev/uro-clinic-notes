@@ -636,6 +636,11 @@
 
 <main>
 
+  <div id="draft-restored-banner" class="hidden" style="max-width:720px;margin:0 auto 12px;padding:8px 14px;background:var(--amber-bg);color:var(--amber-ink);border-radius:var(--radius-sm);font-size:0.82rem;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+    <span>已還原上次未儲存的病歷草稿。</span>
+    <button type="button" class="reset-btn" style="margin:0;padding:4px 10px;font-size:0.76rem;" onclick="discardDraftBanner()">清除草稿</button>
+  </div>
+
   <div class="section">
     <div class="section-num">01</div>
     <h2>基本資料 Demographics</h2>
@@ -729,6 +734,10 @@
             <div data-sex="male">
               <p class="hint">頻尿、夜尿、尿急、尿流變細、解尿中斷、解尿需用力、解尿不乾淨感 — 這些已包含在下方 IPSS 問卷裡，作答後會自動判斷並帶入病歷，不用重複勾選。</p>
               <div id="ipss-questions"></div>
+              <div class="q-block" id="ipss-qol-block">
+                <div class="q-text">生活品質指數 QoL：如果您必須帶著目前這樣的排尿狀況過完餘生，您會有什麼感覺？</div>
+                <div class="opt-row" id="ipss-qol-options"></div>
+              </div>
               <div id="ipss-score" class="score-tag hidden"></div>
             </div>
 
@@ -855,11 +864,17 @@
             </div>
           </fieldset>
           <div class="row">
-            <div class="field" style="flex:1 1 100%;"><label>目前用藥 Medications</label><textarea id="p-meds" placeholder="drug name, dose"></textarea></div>
+            <div class="field" style="flex:1 1 100%;">
+              <label>目前用藥 Medications</label>
+              <p class="hint" style="margin:0 0 6px;">點選常用泌尿科藥物可插入下方欄位，再自行調整。</p>
+              <div class="quickadd-group" id="meds-quickadd"></div>
+              <textarea id="p-meds" placeholder="drug name, dose"></textarea>
+            </div>
           </div>
           <div class="row">
             <div class="field"><label>藥物過敏史 Allergies</label><input type="text" id="p-allergy"></div>
             <div class="field"><label>抽菸 / 飲酒 Social history</label><input type="text" id="p-social" placeholder="e.g. smoking 0.5 ppd"></div>
+            <div class="field"><label>手術史 Surgical history</label><input type="text" id="p-surgical" placeholder="e.g. s/p TURP 2019"></div>
           </div>
         </div>
 
@@ -876,6 +891,15 @@
         </div>
       </div>
       <div class="soap-body">
+
+        <div class="sub-block">
+          <h3>生命徵象 Vital Signs</h3>
+          <div class="row">
+            <div class="field"><label>血壓 BP</label><input type="text" id="p-vs-bp" placeholder="e.g. 120/80 mmHg"></div>
+            <div class="field"><label>脈搏 PR</label><input type="text" id="p-vs-pr" placeholder="e.g. 78/min"></div>
+            <div class="field"><label>體溫 BT</label><input type="text" id="p-vs-bt" placeholder="e.g. 36.5°C"></div>
+          </div>
+        </div>
 
         <div class="sub-block">
           <h3>症狀問卷 Symptom questionnaires</h3>
@@ -1105,6 +1129,19 @@
       <div class="field"><label>依病歷號搜尋 Search by MRN</label><input type="text" id="search-mrn" placeholder="e.g. M001"></div>
       <div class="field" style="flex:2 1 220px;"><label>依診斷搜尋 Search by diagnosis（ICD-10 代碼或名稱）</label><input type="text" id="search-diagnosis" placeholder="e.g. N20.1 or ureteral stone"></div>
     </div>
+    <div class="row">
+      <div class="field"><label>建立日期（起）From date</label><input type="date" id="search-date-from"></div>
+      <div class="field"><label>建立日期（訖）To date</label><input type="date" id="search-date-to"></div>
+      <div class="field">
+        <label>排序 Sort</label>
+        <select id="records-sort">
+          <option value="newest">最新在前 Newest first</option>
+          <option value="oldest">最舊在前 Oldest first</option>
+          <option value="name">依姓名 Name A→Z</option>
+          <option value="mrn">依病歷號 MRN A→Z</option>
+        </select>
+      </div>
+    </div>
     <div class="quickadd-group">
       <button type="button" class="add-row-btn" onclick="exportRecordsCSV()">⬇ 匯出 CSV</button>
       <button type="button" class="add-row-btn" onclick="exportRecordsSQL()">⬇ 匯出 SQL</button>
@@ -1193,6 +1230,90 @@ function enterDemoMode(){
 let lastFullNote = '';
 let sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
 
+// ====== 本機草稿自動暫存：僅存在此瀏覽器（localStorage），試用模式完全不啟用 ======
+const DRAFT_KEY = 'uroClinicNoteDraft_v1';
+const DRAFT_FIELD_IDS = ['p-name','p-id','p-age','p-sex','p-date-y','p-date-m','p-date-d',
+  'chief-complaint','cc-duration','cc-note','smoking-py','p-meds','p-allergy','p-social','p-surgical',
+  'p-vs-bp','p-vs-pr','p-vs-bt','p-exam','p-imaging','plan-heading','plan-dx-summary','p-plan','luts-concurrent-uti'];
+
+function saveDraftToLocalStorage(){
+  if(isDemoMode) return; // trial mode never persists anything, even locally
+  try{
+    const values = {};
+    DRAFT_FIELD_IDS.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      values[id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    const checked = Array.from(document.querySelectorAll('#tab-note-view input[type=checkbox]:checked'))
+      .filter(el=>!DRAFT_FIELD_IDS.includes(el.id))
+      .map(el=>el.value);
+    const radios = {};
+    Array.from(document.querySelectorAll('#tab-note-view input[type=radio]:checked')).forEach(el=>{
+      if(el.name) radios[el.name] = el.value;
+    });
+    const activeIcdButtons = Array.from(document.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value);
+    const labRows = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>({
+      name: row.querySelector('.lab-name').value,
+      y: row.querySelector('.lab-y').value,
+      m: row.querySelector('.lab-m').value,
+      d: row.querySelector('.lab-d').value,
+      finding: row.querySelector('.lab-finding').value
+    }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ values, checked, radios, activeIcdButtons, labRows }));
+  }catch(e){ /* best-effort only (private browsing, quota, etc.) */ }
+}
+
+function clearDraftFromLocalStorage(){
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+}
+
+function draftHasContent(draft){
+  if(!draft) return false;
+  const v = draft.values || {};
+  return !!(v['p-name'] || v['p-id'] || v['chief-complaint'] || (draft.checked && draft.checked.length) || (draft.labRows && draft.labRows.some(r=>r.name || r.finding)));
+}
+
+function restoreDraftFromLocalStorage(){
+  if(isDemoMode) return;
+  let draft;
+  try{ draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); }catch(e){ draft = null; }
+  if(!draftHasContent(draft)) return;
+
+  if(draft.values['chief-complaint']) selectComplaint(draft.values['chief-complaint'], {skipScroll:true});
+  Object.keys(draft.values).forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(el.type === 'checkbox') el.checked = !!draft.values[id];
+    else el.value = draft.values[id];
+  });
+  applySexFilter();
+
+  (draft.checked||[]).forEach(v=>{
+    const el = Array.from(document.querySelectorAll('#tab-note-view input[type=checkbox]')).find(e=>e.value===v);
+    if(el) el.checked = true;
+  });
+  Object.keys(draft.radios||{}).forEach(name=>{
+    const el = Array.from(document.getElementsByName(name)).find(e=>e.value===draft.radios[name]);
+    if(el) el.checked = true;
+  });
+  (draft.activeIcdButtons||[]).forEach(v=>{
+    const btn = Array.from(document.querySelectorAll('.related-icd-btn')).find(e=>e.dataset.value===v);
+    if(btn) btn.classList.add('active');
+  });
+  if(draft.labRows && draft.labRows.length){
+    document.getElementById('lab-rows').innerHTML = '';
+    draft.labRows.forEach(r=>addLabRow(r.name, r.y, r.m, r.d, r.finding));
+  }
+  const concurrentUtiEl = document.getElementById('luts-concurrent-uti');
+  if(concurrentUtiEl){
+    document.getElementById('luts-oabss-block').classList.toggle('hidden', concurrentUtiEl.checked);
+  }
+  refreshPlanHeadingFromDiagnoses();
+
+  document.getElementById('draft-restored-banner').classList.remove('hidden');
+}
+
 function copySection(key, btnEl){
   const text = sectionTexts[key];
   if(!text) return;
@@ -1250,8 +1371,10 @@ function saveToFirebase(){
     patientName: document.getElementById('p-name').value,
     mrn: document.getElementById('p-id').value,
     chiefComplaint: document.getElementById('chief-complaint').value,
+    patientSex: document.getElementById('p-sex').value,
     noteText: noteText
   }).then(function(){
+    clearDraftFromLocalStorage();
     statusEl.textContent = '已儲存 ✓';
     setTimeout(()=>{ statusEl.textContent=''; }, 2500);
   }).catch(function(err){
@@ -1300,17 +1423,47 @@ function loadRecordsList(){
     });
 }
 
+function toLocalDateStr(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function recordDateInRange(record, fromStr, toStr){
+  if(!fromStr && !toStr) return true;
+  const ts = (record.createdAt && record.createdAt.toDate) ? record.createdAt.toDate() : null;
+  if(!ts) return false;
+  const dayStr = toLocalDateStr(ts);
+  if(fromStr && dayStr < fromStr) return false;
+  if(toStr && dayStr > toStr) return false;
+  return true;
+}
+function currentSortMode(){
+  const el = document.getElementById('records-sort');
+  return el ? el.value : 'newest';
+}
+function sortRecords(arr, mode){
+  const copy = arr.slice();
+  const getTime = r => (r.createdAt && r.createdAt.toMillis) ? r.createdAt.toMillis() : 0;
+  if(mode === 'oldest') return copy.sort((a,b)=>getTime(a)-getTime(b));
+  if(mode === 'name') return copy.sort((a,b)=>(a.patientName||'').localeCompare(b.patientName||''));
+  if(mode === 'mrn') return copy.sort((a,b)=>(a.mrn||'').localeCompare(b.mrn||''));
+  return copy.sort((a,b)=>getTime(b)-getTime(a));
+}
+
 function renderRecordsList(){
   const listEl = document.getElementById('records-list');
   const mrnQuery = document.getElementById('search-mrn').value.trim().toLowerCase();
   const dxQuery = document.getElementById('search-diagnosis').value.trim().toLowerCase();
-  const hasFilter = !!(mrnQuery || dxQuery);
+  const dateFrom = document.getElementById('search-date-from').value;
+  const dateTo = document.getElementById('search-date-to').value;
+  const hasFilter = !!(mrnQuery || dxQuery || dateFrom || dateTo);
 
-  const filtered = recordsCache.filter(r=>{
+  let filtered = recordsCache.filter(r=>{
     if(mrnQuery && !(r.mrn||'').toLowerCase().includes(mrnQuery)) return false;
     if(dxQuery && !(r.noteText||'').toLowerCase().includes(dxQuery)) return false;
+    if(!recordDateInRange(r, dateFrom, dateTo)) return false;
     return true;
   });
+  filtered = sortRecords(filtered, currentSortMode());
   currentFilteredRecords = filtered;
 
   // Only cap the default (unfiltered) browsing view; a search shows every match.
@@ -1336,7 +1489,7 @@ function renderRecordsList(){
 
     const metaSpan = document.createElement('span');
     metaSpan.className = 'record-row-meta';
-    const ccLabel = complaintLabelsEN[record.chiefComplaint] || record.chiefComplaint || '';
+    const ccLabel = complaintDisplayLabel(record.chiefComplaint, record.patientSex) || record.chiefComplaint || '';
     metaSpan.textContent = (record.mrn ? 'MRN ' + record.mrn + ' · ' : '') + ccLabel;
 
     const dateSpan = document.createElement('span');
@@ -1350,6 +1503,9 @@ function renderRecordsList(){
 }
 document.getElementById('search-mrn').addEventListener('input', renderRecordsList);
 document.getElementById('search-diagnosis').addEventListener('input', renderRecordsList);
+document.getElementById('search-date-from').addEventListener('input', renderRecordsList);
+document.getElementById('search-date-to').addEventListener('input', renderRecordsList);
+document.getElementById('records-sort').addEventListener('change', renderRecordsList);
 
 function downloadTextFile(content, filename, mimeType){
   const blob = new Blob([content], {type: mimeType});
@@ -1378,7 +1534,7 @@ function exportRecordsCSV(){
   const rows = currentFilteredRecords.map(r=>[
     r.mrn || '',
     r.patientName || '',
-    complaintLabelsEN[r.chiefComplaint] || r.chiefComplaint || '',
+    complaintDisplayLabel(r.chiefComplaint, r.patientSex) || r.chiefComplaint || '',
     recordCreatedAtIso(r),
     r.noteText || ''
   ].map(csvEscape).join(','));
@@ -1404,7 +1560,7 @@ function exportRecordsSQL(){
     ''
   ];
   currentFilteredRecords.forEach(r=>{
-    const values = [r.id, r.mrn || '', r.patientName || '', complaintLabelsEN[r.chiefComplaint] || r.chiefComplaint || '', recordCreatedAtIso(r), r.noteText || '']
+    const values = [r.id, r.mrn || '', r.patientName || '', complaintDisplayLabel(r.chiefComplaint, r.patientSex) || r.chiefComplaint || '', recordCreatedAtIso(r), r.noteText || '']
       .map(v=>"'" + sqlEscape(v) + "'").join(', ');
     lines.push('INSERT INTO soap_notes (id, mrn, patient_name, chief_complaint, created_at, note_text) VALUES (' + values + ');');
   });
@@ -1420,7 +1576,7 @@ function openRecordEditor(id){
   document.getElementById('editor-record-id').value = id;
   document.getElementById('editor-patient-name').value = record.patientName || '';
   document.getElementById('editor-mrn').value = record.mrn || '';
-  document.getElementById('editor-cc-label').textContent = complaintLabelsEN[record.chiefComplaint] || record.chiefComplaint || '(未分類)';
+  document.getElementById('editor-cc-label').textContent = complaintDisplayLabel(record.chiefComplaint, record.patientSex) || record.chiefComplaint || '(未分類)';
   document.getElementById('editor-note-text').value = record.noteText || '';
   document.getElementById('editor-status').textContent = '';
 }
@@ -1460,6 +1616,14 @@ const complaintLabelsEN = {
   other:"Other"
 };
 const hasQuestionnaire = { luts:true, incontinence:true, ed:true };
+
+// BPH is a male-only diagnosis, so a female LUTS patient's complaint label
+// (used both in the generated note and everywhere records are listed/
+// exported) should never carry the "(suspected BPH)" qualifier.
+function complaintDisplayLabel(cc, sex){
+  if(cc === 'luts' && sex === 'female') return "Lower urinary tract symptoms";
+  return complaintLabelsEN[cc] || cc || '';
+}
 
 function getMainRocDate(){
   return {
@@ -1519,7 +1683,7 @@ function updateReminder(){
   document.getElementById('reminder-output').textContent = buildExamSuggestions(cc, redflags, sex);
 }
 
-function selectComplaint(v){
+function selectComplaint(v, opts){
   document.getElementById('chief-complaint').value = v;
 
   document.querySelectorAll('.cc-btn').forEach(btn=>{
@@ -1546,7 +1710,7 @@ function selectComplaint(v){
   const rest = document.getElementById('rest-of-form');
   const wasHidden = rest.classList.contains('hidden');
   rest.classList.remove('hidden');
-  if(wasHidden){
+  if(wasHidden && !(opts && opts.skipScroll)){
     rest.scrollIntoView({behavior:'smooth', block:'start'});
   }
   updateReminder();
@@ -1596,6 +1760,12 @@ function buildQuestionBlock(container, items, opts, name, optsLast){
   container.innerHTML = html;
 }
 buildQuestionBlock(document.getElementById('ipss-questions'), ipssItems, ipssOpts, 'ipss', ipssNightOpts);
+
+// IPSS also includes a separate disease-specific quality-of-life (QoL)
+// index question, scored 0-6 and reported alongside (not summed into) the
+// 0-35 symptom total.
+const ipssQolOpts = ["0：非常滿意","1：滿意","2：大致滿意","3：好壞參半","4：大致不滿意","5：不開心","6：很痛苦"];
+document.getElementById('ipss-qol-options').innerHTML = ipssQolOpts.map((o,j)=>`<label><input type="radio" name="ipss-qol" value="${j}">${o}</label>`).join('');
 
 // ---- OAB-SS ----
 const oabItems = [
@@ -1818,6 +1988,23 @@ document.getElementById('p-sex').addEventListener('change', applySexFilter);
 buildQuickAdd('exam-general-quickadd', examGeneralTemplates, 'exam-quickadd', examTemplates, 'p-exam', insertPhrase);
 buildQuickAdd('plan-general-quickadd', planGeneralTemplates, 'plan-quickadd', planTemplates, 'p-plan', insertLine);
 
+// ---- Quick-add templates: common urology medications ----
+const medsQuickTemplates = [
+  {label:"Tamsulosin 0.4mg", text:"Tamsulosin 0.4mg qd"},
+  {label:"Silodosin 8mg", text:"Silodosin 8mg qd"},
+  {label:"Finasteride 5mg", text:"Finasteride 5mg qd"},
+  {label:"Dutasteride 0.5mg", text:"Dutasteride 0.5mg qd"},
+  {label:"Oxybutynin 5mg", text:"Oxybutynin 5mg bid"},
+  {label:"Solifenacin 5mg", text:"Solifenacin 5mg qd"},
+  {label:"Mirabegron 25mg", text:"Mirabegron 25mg qd"},
+  {label:"Sildenafil 50mg prn", text:"Sildenafil 50mg prn"},
+  {label:"Tadalafil 5mg", text:"Tadalafil 5mg qd"}
+];
+const medsQuickEl = document.getElementById('meds-quickadd');
+medsQuickTemplates.forEach(t=>{
+  medsQuickEl.appendChild(makeQuickBtn(t.label, ()=>insertLine('p-meds', t.text)));
+});
+
 // ---- Related/comorbid ICD-10 quick-select + auto-fill Plan heading ----
 const relatedIcdSuggestions = {
   luts: [
@@ -2015,7 +2202,8 @@ function scoreIPSS(){
   }
   if(answered===0) return null;
   let severity = total<=7?"mild":(total<=19?"moderate":"severe");
-  return {total, severity, answered};
+  const qol = getRadioValue('ipss-qol');
+  return {total, severity, answered, qol};
 }
 function scoreOAB(namePrefix){
   namePrefix = namePrefix || 'oab';
@@ -2059,7 +2247,7 @@ function generateNote(){
   }
   const rocFullDate = `${rocY}${String(rocM).padStart(2,'0')}${String(rocD).padStart(2,'0')}`;
   const cc = document.getElementById('chief-complaint').value;
-  const ccLabel = (cc === 'luts' && sex === 'female') ? "Lower urinary tract symptoms" : (complaintLabelsEN[cc] || "Not specified");
+  const ccLabel = complaintDisplayLabel(cc, sex) || "Not specified";
   const duration = document.getElementById('cc-duration').value || "not documented";
   const ccNote = document.getElementById('cc-note').value;
 
@@ -2120,6 +2308,7 @@ function generateNote(){
   mainSentence += '.';
   if(cc === 'luts' && ipss){
     mainSentence += ` IPSS score ${ipss.total}/35 (${ipss.severity} symptom severity).`;
+    if(ipss.qol !== null) mainSentence += ` IPSS-QoL index ${ipss.qol}/6.`;
   }
   if(cc === 'luts' && lutsOab){
     mainSentence += ` OAB-SS score ${lutsOab.total}/15${lutsOab.flag ? " (pattern consistent with overactive bladder)" : ""}.`;
@@ -2135,6 +2324,7 @@ function generateNote(){
   let questionnaireText = "";
   if(ipss){
     questionnaireText += `IPSS (International Prostate Symptom Score): ${ipss.total}/35 (${ipss.answered}/7 items answered) - ${ipss.severity} symptom severity.\n`;
+    if(ipss.qol !== null) questionnaireText += `IPSS-QoL (disease-specific quality of life due to urinary symptoms): ${ipss.qol}/6.\n`;
   }
   const oab = scoreOAB();
   if(oab){
@@ -2148,6 +2338,15 @@ function generateNote(){
     questionnaireText += `IIEF-5 (SHIM): ${iief.total}/25 (${iief.answered}/5 items answered) - ${iief.severity}.\n`;
   }
 
+  const vsBp = document.getElementById('p-vs-bp').value.trim();
+  const vsPr = document.getElementById('p-vs-pr').value.trim();
+  const vsBt = document.getElementById('p-vs-bt').value.trim();
+  const vsParts = [];
+  if(vsBp) vsParts.push('BP ' + vsBp);
+  if(vsPr) vsParts.push('PR ' + vsPr);
+  if(vsBt) vsParts.push('BT ' + vsBt);
+  const vitalsText = vsParts.length ? vsParts.join(', ') : '[to be recorded]';
+
   const imagingText = document.getElementById('p-imaging').value.trim();
   const labEntries = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>{
     const nm = row.querySelector('.lab-name').value || 'Lab';
@@ -2160,7 +2359,7 @@ function generateNote(){
   const labsImagingText = [imagingText, ...labEntries].filter(Boolean).join('\n');
 
   let objective =
-`Vital Signs: [to be recorded]
+`Vital Signs: ${vitalsText}
 
 Symptom Questionnaires:
 ${questionnaireText || "No standardized questionnaire completed at this visit."}
@@ -2222,7 +2421,7 @@ ${plan}`;
   document.getElementById('output-section').style.display = 'block';
   document.getElementById('output-section').scrollIntoView({behavior:'smooth'});
 
-  showTag('ipss-score', ipss ? `IPSS: ${ipss.total} (${ipss.severity})` : null);
+  showTag('ipss-score', ipss ? `IPSS: ${ipss.total} (${ipss.severity})${ipss.qol!==null ? ', QoL '+ipss.qol : ''}` : null);
   showTag('oabss-score', oab ? `OAB-SS: ${oab.total}${oab.flag?" (OAB pattern)":""}` : null);
   showTag('luts-oabss-score', lutsOab ? `OAB-SS: ${lutsOab.total}${lutsOab.flag?" (OAB pattern)":""}` : null);
   showTag('iief-score', iief ? `IIEF-5: ${iief.total} (${iief.severity})` : null);
@@ -2318,9 +2517,16 @@ function initDate(){
 initDate();
 addLabRow();
 
-function resetForm(){
-  if(!confirm('確定要清空目前表單，開始下一位病人的病歷嗎？尚未儲存的內容將會遺失。')) return;
+let draftSaveTimer = null;
+['input','change','click'].forEach(evt=>{
+  document.getElementById('tab-note-view').addEventListener(evt, function(){
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveDraftToLocalStorage, 400);
+  });
+});
+restoreDraftFromLocalStorage();
 
+function clearFormFields(){
   // Demographics
   document.getElementById('p-name').value = '';
   document.getElementById('p-id').value = '';
@@ -2341,7 +2547,7 @@ function resetForm(){
   document.getElementById('luts-oabss-block').classList.remove('hidden');
 
   // Free-text fields
-  ['smoking-py','p-meds','p-allergy','p-social','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
+  ['smoking-py','p-meds','p-allergy','p-social','p-surgical','p-vs-bp','p-vs-pr','p-vs-bt','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
     document.getElementById(id).value = '';
   });
   const headingEl = document.getElementById('plan-heading');
@@ -2375,7 +2581,19 @@ function resetForm(){
   });
 
   applySexFilter();
+}
+
+function resetForm(){
+  if(!confirm('確定要清空目前表單，開始下一位病人的病歷嗎？尚未儲存的內容將會遺失。')) return;
+  clearFormFields();
+  clearDraftFromLocalStorage();
   window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function discardDraftBanner(){
+  clearFormFields();
+  clearDraftFromLocalStorage();
+  document.getElementById('draft-restored-banner').classList.add('hidden');
 }
 </script>
 
