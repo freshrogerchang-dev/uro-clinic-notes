@@ -2302,10 +2302,19 @@ function generateNote(){
   const positiveRF = redflags.map(x=>redflagDisplay[x]||x);
   const negativeRF = cc === 'ed' ? [] : allRedflagValues.filter(x=>!redflags.includes(x)).map(x=>redflagDisplay[x]||x);
 
+  // The doctor's own chief-complaint description (ccNote) is the actual
+  // presenting complaint and belongs at the front of the sentence,
+  // immediately followed by "was noted for X"; checkbox-derived symptoms
+  // are supporting/associated findings and come after, not before it.
   const symptomPhrase = complaintSymptoms.length ? complaintSymptoms.join(', ') : ccLabel.toLowerCase();
-  let mainSentence = `${cap(symptomPhrase)} was noted for ${duration}`;
-  if(ccNote) mainSentence += `, ${ccNote}`;
-  mainSentence += '.';
+  let mainSentence;
+  if(ccNote){
+    mainSentence = `${cap(ccNote)} was noted for ${duration}`;
+    if(complaintSymptoms.length) mainSentence += `, associated with ${complaintSymptoms.join(', ')}`;
+    mainSentence += '.';
+  } else {
+    mainSentence = `${cap(symptomPhrase)} was noted for ${duration}.`;
+  }
   if(cc === 'luts' && ipss){
     mainSentence += ` IPSS score ${ipss.total}/35 (${ipss.severity} symptom severity).`;
     if(ipss.qol !== null) mainSentence += ` IPSS-QoL index ${ipss.qol}/6.`;
