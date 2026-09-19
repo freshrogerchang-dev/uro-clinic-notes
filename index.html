@@ -1020,6 +1020,30 @@
             <label><input type="checkbox" value="C62.90 - Malignant neoplasm of testis, unspecified"><span class="icd-code">C62.90</span> Malignant neoplasm of testis (to be ruled out)</label>
           </div>
         </div>
+
+        <div class="sub-block">
+          <h3>腫瘤分期治療指引查詢 Cancer stage &amp; guideline reference <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">(僅供你參考，不會列入病歷文字)</span></h3>
+          <div class="row">
+            <div class="field">
+              <label>癌症類型 Cancer type</label>
+              <select id="guideline-cancer">
+                <option value="">請選擇 Select...</option>
+                <option value="bladder">膀胱癌 Bladder cancer</option>
+                <option value="prostate">攝護腺癌 Prostate cancer</option>
+                <option value="rcc">腎細胞癌 Renal cell carcinoma</option>
+                <option value="testicular">睪丸癌 Testicular cancer</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>分期 / 分類 Stage</label>
+              <select id="guideline-stage">
+                <option value="">請先選擇癌症類型</option>
+              </select>
+            </div>
+          </div>
+          <div class="output-box" id="guideline-output">請選擇癌症類型與分期，顯示對應的建議檢查與治療指引重點。</div>
+          <p class="hint" style="margin-bottom:0;">整理自 AUA/SUO、EAU、NCCN 等指引重點，僅供快速參考；實際治療請以當年度最新指引原文或 UpToDate/OpenEvidence 等資料庫最終確認。</p>
+        </div>
       </div>
     </div>
 
@@ -2507,6 +2531,158 @@ function buildExamSuggestions(cc, redflags, sex){
   return lines.join("\n");
 }
 
+// ---- Cancer stage & guideline quick-reference (Assessment, reference-only) ----
+// Summarized from AUA/SUO, EAU, and NCCN guideline highlights. This is a
+// static quick-reference for the physician, not a live/current database —
+// deliberately excluded from the generated note text (like PMH/meds/etc.)
+// since it's educational reference, not a documentation of this visit.
+const cancerGuidelines = {
+  bladder: {
+    stages: {
+      "ta-lg": {
+        label: "Ta, low-grade (NMIBC, low risk)",
+        workup: ["Cystoscopy + TURBT (biopsy including detrusor muscle when feasible)", "Urine cytology", "Pathology review: grade, depth of invasion"],
+        treatment: ["TURBT alone is often sufficient", "Single immediate post-op intravesical chemotherapy (e.g., Mitomycin C) within 24 hours", "No BCG required for low-risk disease"],
+        followUp: ["Cystoscopy at 3 months, then per risk-adapted schedule"]
+      },
+      "t1-hg": {
+        label: "Ta/T1 high-grade, or T1 any grade (Stage I — intermediate/high risk NMIBC)",
+        workup: ["TURBT with detrusor muscle in specimen", "Repeat resection (re-TURBT) within 2-6 weeks for ALL T1 tumors (high understaging/residual-disease rate)", "Urine cytology", "CT urogram to exclude synchronous upper-tract urothelial carcinoma", "Pathology review for LVI, variant histology, and concurrent CIS"],
+        treatment: ["Induction intravesical BCG (6 weekly instillations) plus maintenance BCG (SWOG schedule) for at least 1, ideally up to 3 years", "Consider early radical cystectomy for very-high-risk T1 (LVI+, variant histology, concurrent CIS, or BCG-unresponsive disease)"],
+        followUp: ["Cystoscopy every 3 months for 2 years, every 6 months through year 4, then annually", "Upper-tract imaging every 1-2 years if high-risk"]
+      },
+      "cis": {
+        label: "Tis / CIS (carcinoma in situ)",
+        workup: ["TURBT plus random/mapping bladder biopsies", "Enhanced (blue-light) cystoscopy if available", "Urine cytology (often positive)"],
+        treatment: ["Induction + maintenance intravesical BCG", "Consider radical cystectomy if BCG-unresponsive"],
+      },
+      "mibc": {
+        label: "Muscle-invasive, non-metastatic (T2-T4a)",
+        workup: ["CT chest/abdomen/pelvis or MRI pelvis for local staging", "Bone scan if symptomatic or elevated alkaline phosphatase", "Multidisciplinary discussion"],
+        treatment: ["Neoadjuvant cisplatin-based chemotherapy (if cisplatin-eligible) followed by radical cystectomy with pelvic lymph node dissection", "Alternative: trimodal bladder-preserving therapy (maximal TURBT + concurrent chemoradiation) in selected patients"],
+      },
+      "metastatic": {
+        label: "Metastatic / unresectable",
+        workup: ["Staging CT chest/abdomen/pelvis; consider bone scan if symptomatic", "PD-L1 and FGFR alteration testing to guide systemic therapy", "Assess cisplatin eligibility"],
+        treatment: ["First-line: enfortumab vedotin + pembrolizumab (current preferred regimen), or platinum-based chemotherapy if unavailable/ineligible", "FGFR-altered disease: erdafitinib as an option after progression", "Maintenance avelumab after first-line chemotherapy if not on EV-pembrolizumab"],
+      }
+    }
+  },
+  prostate: {
+    stages: {
+      "low": {
+        label: "Very low / low risk, localized",
+        workup: ["PSA, DRE", "Multiparametric MRI (PI-RADS)", "Systematic + MRI-targeted biopsy", "Gleason score / ISUP grade group"],
+        treatment: ["Active surveillance preferred (PSA every 6 months, periodic biopsy and mpMRI)", "Definitive treatment (surgery or radiation) reserved for patient preference or reclassification"],
+      },
+      "intermediate": {
+        label: "Intermediate risk, localized",
+        workup: ["As above; consider genomic classifier (e.g., Decipher) to guide decision-making", "Bone scan/CT or PSMA-PET if unfavorable intermediate-risk features"],
+        treatment: ["Radical prostatectomy +/- pelvic lymph node dissection, OR", "Radiation therapy (EBRT or brachytherapy) +/- short-course ADT (4-6 months) for unfavorable intermediate risk"],
+      },
+      "high": {
+        label: "High / very high risk, localized",
+        workup: ["PSMA-PET (preferred where available) or conventional CT + bone scan for staging"],
+        treatment: ["Radical prostatectomy with extended pelvic lymph node dissection, OR", "Radiation therapy + long-course ADT (18-36 months), +/- abiraterone for very-high-risk disease"],
+      },
+      "n1": {
+        label: "Regional lymph node involvement (N1)",
+        workup: ["Confirm nodal disease on imaging (PSMA-PET preferred)"],
+        treatment: ["ADT + radiation to prostate and pelvic nodes; consider addition of abiraterone"],
+      },
+      "mhspc": {
+        label: "Metastatic, hormone-sensitive (mHSPC)",
+        workup: ["PSMA-PET or bone scan + CT for extent of disease", "Germline/somatic testing (e.g., BRCA1/2, other HRR genes)"],
+        treatment: ["ADT + androgen receptor pathway inhibitor (abiraterone, enzalutamide, apalutamide, or darolutamide)", "Add docetaxel (triplet therapy) for high-volume disease"],
+      },
+      "mcrpc": {
+        label: "Metastatic, castration-resistant (mCRPC)",
+        workup: ["Confirm castrate testosterone level", "Restaging imaging", "Germline/somatic BRCA/HRR mutation testing"],
+        treatment: ["Switch androgen receptor pathway inhibitor class", "PARP inhibitor if HRR-mutated", "Docetaxel or cabazitaxel chemotherapy", "177Lu-PSMA-617 radioligand therapy if PSMA-avid and post-taxane/ARPI"],
+      }
+    }
+  },
+  rcc: {
+    stages: {
+      "localized": {
+        label: "Localized, T1 (≤ 7cm, confined to kidney)",
+        workup: ["Contrast-enhanced CT abdomen/pelvis (or MRI if renal impairment)", "CT chest", "Renal function assessment (split-function if nephron-sparing planned)", "Consider renal mass biopsy if diagnosis uncertain"],
+        treatment: ["Partial nephrectomy preferred (nephron-sparing) when technically feasible", "Active surveillance is an option in select elderly/comorbid patients with small masses"],
+      },
+      "locally-advanced": {
+        label: "Locally advanced, T2-T3 (confined to Gerota's fascia, or renal vein/IVC involvement)",
+        workup: ["CT/MRI to determine IVC tumor thrombus level if present", "Cardiac/vascular surgery consultation if IVC thrombus"],
+        treatment: ["Radical nephrectomy +/- thrombectomy", "Consider adjuvant pembrolizumab for high-risk resected disease"],
+      },
+      "metastatic": {
+        label: "Metastatic",
+        workup: ["Staging CT chest/abdomen/pelvis; brain MRI if symptomatic", "IMDC risk stratification"],
+        treatment: ["First-line per IMDC risk group: combination immunotherapy (nivolumab + ipilimumab) for intermediate/poor risk, or IO+TKI combinations (pembrolizumab + axitinib/lenvatinib, nivolumab + cabozantinib) across risk groups", "Cytoreductive nephrectomy in selected patients"],
+      }
+    }
+  },
+  testicular: {
+    stages: {
+      "stage1": {
+        label: "Stage I (confined to testis, normal markers post-orchiectomy)",
+        workup: ["Radical inguinal orchiectomy (diagnostic and therapeutic)", "Tumor markers (AFP, beta-hCG, LDH) pre- and post-orchiectomy", "CT abdomen/pelvis, chest X-ray"],
+        treatment: ["Seminoma: surveillance preferred; alternatives are single-dose carboplatin AUC7 or adjuvant radiotherapy", "Non-seminoma: surveillance preferred if low-risk (no lymphovascular invasion); 1 cycle BEP chemotherapy or RPLND if high-risk (LVI+)"],
+      },
+      "stage2": {
+        label: "Stage II (regional lymph node involvement)",
+        treatment: ["Seminoma: radiotherapy for stage IIA, or chemotherapy (BEP x3-4 or EP x4) for IIB/bulky disease", "Non-seminoma: chemotherapy (BEP x3-4) +/- RPLND for residual mass"],
+        workup: ["Restaging CT and tumor markers to confirm nodal extent"],
+      },
+      "stage3": {
+        label: "Stage III (distant metastasis)",
+        workup: ["IGCCC risk classification (based on marker levels and site of metastases)"],
+        treatment: ["BEP chemotherapy x3-4 cycles (good risk) or x4 cycles (intermediate/poor risk)", "Post-chemotherapy residual mass resection (RPLND) for non-seminoma"],
+      }
+    }
+  }
+};
+
+function populateGuidelineStages(){
+  const cancer = document.getElementById('guideline-cancer').value;
+  const stageSel = document.getElementById('guideline-stage');
+  stageSel.innerHTML = '';
+  if(cancer && cancerGuidelines[cancer]){
+    const opt0 = document.createElement('option');
+    opt0.value = ''; opt0.textContent = '請選擇分期 Select stage...';
+    stageSel.appendChild(opt0);
+    Object.keys(cancerGuidelines[cancer].stages).forEach(key=>{
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = cancerGuidelines[cancer].stages[key].label;
+      stageSel.appendChild(opt);
+    });
+  } else {
+    const opt0 = document.createElement('option');
+    opt0.value = ''; opt0.textContent = '請先選擇癌症類型';
+    stageSel.appendChild(opt0);
+  }
+  updateGuidelineOutput();
+}
+
+function updateGuidelineOutput(){
+  const cancer = document.getElementById('guideline-cancer').value;
+  const stage = document.getElementById('guideline-stage').value;
+  const outEl = document.getElementById('guideline-output');
+  const entry = (cancer && stage && cancerGuidelines[cancer]) ? cancerGuidelines[cancer].stages[stage] : null;
+  if(!entry){
+    outEl.textContent = '請選擇癌症類型與分期，顯示對應的建議檢查與治療指引重點。';
+    return;
+  }
+  let text = 'Workup / Staging:\n' + entry.workup.map(x=>'- '+x).join('\n');
+  text += '\n\nStandard Treatment:\n' + entry.treatment.map(x=>'- '+x).join('\n');
+  if(entry.followUp){
+    text += '\n\nFollow-up:\n' + entry.followUp.map(x=>'- '+x).join('\n');
+  }
+  outEl.textContent = text;
+}
+document.getElementById('guideline-cancer').addEventListener('change', populateGuidelineStages);
+document.getElementById('guideline-stage').addEventListener('change', updateGuidelineOutput);
+
 function copyOutput(){
   const text = lastFullNote;
   navigator.clipboard.writeText(text).then(()=>{
@@ -2574,6 +2750,11 @@ function clearFormFields(){
   document.querySelector('.icd-placeholder').classList.remove('hidden');
   document.querySelector('.quest-placeholder').classList.remove('hidden');
   document.getElementById('reminder-output').textContent = '請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。';
+
+  // Cancer stage & guideline reference is not patient-specific, but reset
+  // it too so the next patient doesn't start with a stale selection.
+  document.getElementById('guideline-cancer').value = '';
+  populateGuidelineStages();
 
   // Clear generated note and score tags
   document.getElementById('output-section').style.display = 'none';
