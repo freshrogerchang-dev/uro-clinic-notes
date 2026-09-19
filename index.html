@@ -1023,26 +1023,29 @@
 
         <div class="sub-block">
           <h3>腫瘤分期治療指引查詢 Cancer stage &amp; guideline reference <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">(僅供你參考，不會列入病歷文字)</span></h3>
-          <div class="row">
-            <div class="field">
-              <label>癌症類型 Cancer type</label>
-              <select id="guideline-cancer">
-                <option value="">請選擇 Select...</option>
-                <option value="bladder">膀胱癌 Bladder cancer</option>
-                <option value="prostate">攝護腺癌 Prostate cancer</option>
-                <option value="rcc">腎細胞癌 Renal cell carcinoma</option>
-                <option value="testicular">睪丸癌 Testicular cancer</option>
-              </select>
+          <button type="button" class="add-row-btn" id="guideline-toggle-btn" onclick="toggleGuidelinePanel()">▸ 顯示指引查詢工具</button>
+          <div id="guideline-panel" class="hidden">
+            <div class="row" style="margin-top:12px;">
+              <div class="field">
+                <label>癌症類型 Cancer type</label>
+                <select id="guideline-cancer">
+                  <option value="">請選擇 Select...</option>
+                  <option value="bladder">膀胱癌 Bladder cancer</option>
+                  <option value="prostate">攝護腺癌 Prostate cancer</option>
+                  <option value="rcc">腎細胞癌 Renal cell carcinoma</option>
+                  <option value="testicular">睪丸癌 Testicular cancer</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>分期 / 分類 Stage</label>
+                <select id="guideline-stage">
+                  <option value="">請先選擇癌症類型</option>
+                </select>
+              </div>
             </div>
-            <div class="field">
-              <label>分期 / 分類 Stage</label>
-              <select id="guideline-stage">
-                <option value="">請先選擇癌症類型</option>
-              </select>
-            </div>
+            <div class="output-box" id="guideline-output">請選擇癌症類型與分期，顯示對應的建議檢查與治療指引重點。</div>
+            <p class="hint" style="margin-bottom:0;">整理自 AUA/SUO、EAU、NCCN 等指引重點，僅供快速參考；實際治療請以當年度最新指引原文或 UpToDate/OpenEvidence 等資料庫最終確認。</p>
           </div>
-          <div class="output-box" id="guideline-output">請選擇癌症類型與分期，顯示對應的建議檢查與治療指引重點。</div>
-          <p class="hint" style="margin-bottom:0;">整理自 AUA/SUO、EAU、NCCN 等指引重點，僅供快速參考；實際治療請以當年度最新指引原文或 UpToDate/OpenEvidence 等資料庫最終確認。</p>
         </div>
       </div>
     </div>
@@ -2642,6 +2645,14 @@ const cancerGuidelines = {
   }
 };
 
+function toggleGuidelinePanel(){
+  const panel = document.getElementById('guideline-panel');
+  const btn = document.getElementById('guideline-toggle-btn');
+  const show = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !show);
+  btn.textContent = show ? '▾ 隱藏指引查詢工具' : '▸ 顯示指引查詢工具';
+}
+
 function populateGuidelineStages(){
   const cancer = document.getElementById('guideline-cancer').value;
   const stageSel = document.getElementById('guideline-stage');
@@ -2752,9 +2763,13 @@ function clearFormFields(){
   document.getElementById('reminder-output').textContent = '請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。';
 
   // Cancer stage & guideline reference is not patient-specific, but reset
-  // it too so the next patient doesn't start with a stale selection.
+  // it too so the next patient doesn't start with a stale selection, and
+  // collapse it back down since it's an occasional lookup, not part of
+  // the everyday form.
   document.getElementById('guideline-cancer').value = '';
   populateGuidelineStages();
+  document.getElementById('guideline-panel').classList.add('hidden');
+  document.getElementById('guideline-toggle-btn').textContent = '▸ 顯示指引查詢工具';
 
   // Clear generated note and score tags
   document.getElementById('output-section').style.display = 'none';
