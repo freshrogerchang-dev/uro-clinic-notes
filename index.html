@@ -2441,7 +2441,9 @@ function generateNote(){
   if(positiveRF.length) rfLines += `c/o ${joinWith(positiveRF,'and')}.\n`;
   if(negativeRF.length) rfLines += `Denied ${joinWith(negativeRF,'or')}.`;
 
-  const subjective = `[${rocFullDate}] ${mainSentence}\n${rfLines}`.trim();
+  const age = document.getElementById('p-age').value.trim();
+  const patientInfo = age ? `${age} y/o ${sex}\n` : '';
+  const subjective = `${patientInfo}[${rocFullDate}] ${mainSentence}\n${rfLines}`.trim();
 
   // ---- OBJECTIVE ----
   let questionnaireText = "";
