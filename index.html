@@ -620,6 +620,7 @@
   <div class="tab-switch">
     <button type="button" class="tab-btn active" id="tab-btn-note" onclick="switchTab('note')">新增病歷</button>
     <button type="button" class="tab-btn" id="tab-btn-records" onclick="switchTab('records')">病人紀錄</button>
+    <button type="button" class="tab-btn" id="topbar-reset-btn" onclick="resetForm()" title="清空表單，開始下一位病人">👤 下一位病人</button>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span id="user-email"></span>
@@ -1422,6 +1423,7 @@ function switchTab(tab){
   document.getElementById('tab-records-view').classList.toggle('hidden', isNote);
   document.getElementById('tab-btn-note').classList.toggle('active', isNote);
   document.getElementById('tab-btn-records').classList.toggle('active', !isNote);
+  document.getElementById('topbar-reset-btn').classList.toggle('hidden', !isNote);
   if(!isNote) loadRecordsList();
 }
 
