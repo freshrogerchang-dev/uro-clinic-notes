@@ -681,7 +681,7 @@
       <button type="button" class="cc-btn" data-value="stone" onclick="selectComplaint('stone')">疑似泌尿道結石<br><span>腰痛／腎絞痛</span></button>
       <button type="button" class="cc-btn" data-value="uti" onclick="selectComplaint('uti')">疑似泌尿道感染<br><span>UTI</span></button>
       <button type="button" class="cc-btn" data-value="incontinence" onclick="selectComplaint('incontinence')">尿失禁<br><span>Incontinence</span></button>
-      <button type="button" class="cc-btn" data-value="ed" onclick="selectComplaint('ed')">性功能障礙<br><span>Erectile dysfunction</span></button>
+      <button type="button" class="cc-btn" data-value="ed" data-sex="male" onclick="selectComplaint('ed')">性功能障礙<br><span>Erectile dysfunction</span></button>
       <button type="button" class="cc-btn" data-value="scrotal" onclick="selectComplaint('scrotal')">陰囊 / 睪丸問題<br><span>Scrotal / testicular</span></button>
       <button type="button" class="cc-btn" data-value="other" onclick="selectComplaint('other')">其他<br><span>Other</span></button>
     </div>
@@ -2016,10 +2016,20 @@ function applySexFilter(){
       if(el.classList.contains('related-icd-btn')){
         el.classList.remove('active');
       }
-      const input = el.matches('input') ? el : el.querySelector('input[type=checkbox], input[type=radio]');
-      if(input) input.checked = false;
+      const inputs = el.matches('input') ? [el] : el.querySelectorAll('input[type=checkbox], input[type=radio]');
+      inputs.forEach(input=>{ input.checked = false; });
     }
   });
+  // ED (EHS, PDE5i, IIEF-5, N52.x) is male-only; drop it if sex flips to female.
+  if(sex === 'female' && document.getElementById('chief-complaint').value === 'ed'){
+    document.getElementById('chief-complaint').value = '';
+    document.querySelector('.cc-btn[data-value="ed"]').classList.remove('active');
+    document.querySelectorAll('.complaint-block').forEach(b=>b.classList.add('hidden'));
+    document.getElementById('rest-of-form').classList.add('hidden');
+    document.querySelector('.cc-placeholder').classList.remove('hidden');
+    document.querySelector('.icd-placeholder').classList.remove('hidden');
+    document.querySelector('.quest-placeholder').classList.remove('hidden');
+  }
   document.getElementById('luts-cc-subtitle').textContent = sex === 'female'
     ? '頻尿／尿急／膀胱過動症'
     : '頻尿／尿急／排尿無力，疑BPH';
@@ -2339,7 +2349,8 @@ function generateNote(){
   const rocFullDate = `${rocY}${String(rocM).padStart(2,'0')}${String(rocD).padStart(2,'0')}`;
   const cc = document.getElementById('chief-complaint').value;
   const ccLabel = complaintDisplayLabel(cc, sex) || "Not specified";
-  const duration = document.getElementById('cc-duration').value || "not documented";
+  const durationRaw = document.getElementById('cc-duration').value.trim();
+  const notedFor = durationRaw ? `was noted for ${durationRaw}` : 'was noted';
   const ccNote = document.getElementById('cc-note').value;
 
   const redflags = cc === 'ed' ? [] : checkedValues(document.querySelector('.redflag-box'));
@@ -2350,12 +2361,26 @@ function generateNote(){
   if(symptomBlock){
     complaintSymptoms = Array.from(symptomBlock.querySelectorAll('input[type=checkbox]:checked:not(#luts-concurrent-uti), input[type=radio]:checked:not([name^="ipss"]):not([name^="luts-oab"])')).map(el=>el.value);
   }
-  if(cc === 'luts'){
+  if(cc === 'luts' && sex === 'male'){
     const ipssDerived = ipssSymptomMap.filter((symptomValue, i)=>{
       const v = getRadioValue('ipss'+i);
       return v !== null && v > 0;
     });
     complaintSymptoms = ipssDerived.concat(complaintSymptoms.filter(s=>!ipssDerived.includes(s)));
+  }
+  if(cc === 'luts' && sex === 'female' && !document.getElementById('luts-concurrent-uti').checked){
+    const oabSymptomMap = ["urinary frequency", "nocturia", "urinary urgency", "urge urinary incontinence"];
+    const oabDerived = oabSymptomMap.filter((symptomValue, i)=>getRadioValue('luts-oab'+i) > 0);
+    complaintSymptoms = oabDerived.concat(complaintSymptoms);
+  }
+  if(cc === 'hematuria'){
+    const packYears = document.getElementById('smoking-py').value.trim();
+    if(packYears){
+      const withPy = `smoking history (${packYears})`;
+      const idx = complaintSymptoms.indexOf('smoking history');
+      if(idx >= 0) complaintSymptoms[idx] = withPy;
+      else complaintSymptoms.push(withPy);
+    }
   }
   const icdBlock = cc ? document.querySelector('.icd-block[data-cc="'+cc+'"]') : null;
   if(icdBlock){
@@ -2367,7 +2392,9 @@ function generateNote(){
   const planNotes = document.getElementById('p-plan').value;
 
   // ---- SUBJECTIVE (narrative style, matches hospital template) ----
-  const ipss = scoreIPSS();
+  // Each questionnaire is only scored for the complaint (and sex) it belongs
+  // to, so answers left over in a now-hidden block don't leak into the note.
+  const ipss = (cc === 'luts' && sex === 'male') ? scoreIPSS() : null;
   // Female LUTS patients use OAB-SS instead of IPSS (which is prostate-specific),
   // unless concurrent UTI is suspected, in which case scoring is deferred.
   const lutsConcurrentUti = document.getElementById('luts-concurrent-uti') ? document.getElementById('luts-concurrent-uti').checked : false;
@@ -2400,11 +2427,11 @@ function generateNote(){
   const symptomPhrase = complaintSymptoms.length ? complaintSymptoms.join(', ') : ccLabel.toLowerCase();
   let mainSentence;
   if(ccNote){
-    mainSentence = `${cap(ccNote)} was noted for ${duration}`;
+    mainSentence = `${cap(ccNote)} ${notedFor}`;
     if(complaintSymptoms.length) mainSentence += `, associated with ${complaintSymptoms.join(', ')}`;
     mainSentence += '.';
   } else {
-    mainSentence = `${cap(symptomPhrase)} was noted for ${duration}.`;
+    mainSentence = `${cap(symptomPhrase)} ${notedFor}.`;
   }
   // IPSS/OAB-SS numeric scores are reported once, in Objective's Symptom
   // Questionnaires section — restating them here in Subjective as well
@@ -2422,14 +2449,14 @@ function generateNote(){
     questionnaireText += `IPSS (International Prostate Symptom Score): ${ipss.total}/35 (${ipss.answered}/7 items answered) - ${ipss.severity} symptom severity.\n`;
     if(ipss.qol !== null) questionnaireText += `IPSS-QoL (disease-specific quality of life due to urinary symptoms): ${ipss.qol}/6.\n`;
   }
-  const oab = scoreOAB();
+  const oab = cc === 'incontinence' ? scoreOAB() : null;
   if(oab){
     questionnaireText += `OAB-SS (Overactive Bladder Symptom Score): ${oab.total}/15 (${oab.answered}/4 items answered)${oab.flag ? " - pattern consistent with overactive bladder" : ""}.\n`;
   }
   if(lutsOab){
     questionnaireText += `OAB-SS (Overactive Bladder Symptom Score): ${lutsOab.total}/15 (${lutsOab.answered}/4 items answered)${lutsOab.flag ? " - pattern consistent with overactive bladder" : ""}.\n`;
   }
-  const iief = scoreIIEF();
+  const iief = cc === 'ed' ? scoreIIEF() : null;
   if(iief){
     questionnaireText += `IIEF-5 (SHIM): ${iief.total}/25 (${iief.answered}/5 items answered) - ${iief.severity}.\n`;
   }
