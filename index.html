@@ -585,6 +585,15 @@
   }
   .reset-btn:hover{background:var(--rust-bg);}
   .reset-btn:active{background:var(--rust);color:#fff;}
+  .trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+  .trend-card{position:relative;border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px 6px;background:#FCFDFC;}
+  .trend-title{font-size:0.8rem;color:var(--ink);font-weight:600;}
+  .trend-sub{font-size:0.72rem;color:var(--ink-soft);}
+  .trend-card svg{display:block;width:100%;height:auto;overflow:visible;}
+  .trend-stat{font-family:'Source Serif 4',serif;font-size:1.5rem;color:var(--ink);line-height:1.2;margin-top:4px;}
+  .trend-tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:0.72rem;padding:3px 7px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-120%);}
+  .trend-table{font-size:0.75rem;border-collapse:collapse;margin-top:6px;}
+  .trend-table td,.trend-table th{border-bottom:1px solid var(--line);padding:2px 10px 2px 0;text-align:left;color:var(--ink-soft);font-weight:400;}
   .disclaimer{
     font-size:0.76rem;
     color:var(--ink-soft);
@@ -645,9 +654,25 @@
   <div class="section">
     <div class="section-num">01</div>
     <h2>基本資料 Demographics</h2>
+    <div class="tab-switch" style="margin-bottom:12px;">
+      <button type="button" class="tab-btn active" id="visit-new-btn" onclick="setVisitType('new')">🆕 新病人 New patient</button>
+      <button type="button" class="tab-btn" id="visit-return-btn" onclick="setVisitType('return')">🔁 回診病人 Return visit</button>
+    </div>
     <div class="row">
       <div class="field"><label>姓名 Name</label><input type="text" id="p-name"></div>
       <div class="field"><label>病歷號 MRN</label><input type="text" id="p-id"></div>
+    </div>
+    <div id="return-visit-panel" class="hidden" style="margin:-4px 0 12px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+        <button type="button" class="save-btn" style="margin:0;" onclick="loadReturnVisit()">⤵ 帶入上次病歷</button>
+        <span class="save-status" id="return-visit-status" style="margin:0;"></span>
+      </div>
+      <p class="hint">輸入病歷號後按「帶入上次病歷」：帶入基本資料、主訴、診斷、用藥與病史，看診日期維持今天。上次安排的手術會帶成「s/p 手術 (日期)」，安排的檢查會在 Objective 預留結果欄位。</p>
+      <details id="prev-visit-panel" class="hidden" style="margin-top:8px;">
+        <summary style="cursor:pointer;font-size:0.85rem;color:var(--teal-deep);">📄 上次病歷與趨勢（參考，不會寫入病歷）</summary>
+        <div id="prev-trends" style="margin-top:10px;"></div>
+        <div class="output-box" id="prev-note-text" style="margin-top:10px;max-height:320px;overflow:auto;"></div>
+      </details>
     </div>
     <div class="row">
       <div class="field"><label>年齡 Age</label><input type="number" id="p-age" min="0" max="120"></div>
@@ -927,6 +952,21 @@
           </div>
         </div>
 
+        <div class="sub-block hidden" id="uro-measure-block">
+          <h3>泌尿科檢查數據 Urologic measurements</h3>
+          <div class="row" data-sex="male">
+            <div class="field"><label>PSA (ng/mL)</label><input type="number" id="m-psa" step="0.01" min="0" placeholder="e.g. 4.2"></div>
+            <div class="field"><label>攝護腺體積 Prostate vol (mL)</label><input type="number" id="luts-prostate-vol" min="0" placeholder="e.g. 32"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Qmax (mL/s)</label><input type="number" id="m-qmax" step="0.1" min="0"></div>
+            <div class="field"><label>排尿量 Voided vol (mL)</label><input type="number" id="m-vv" min="0"></div>
+            <div class="field"><label>殘尿 PVR (mL)</label><input type="number" id="m-pvr" min="0"></div>
+          </div>
+          <p class="hint" style="margin-top:-4px;">填寫後自動計算 PSA density、判讀尿流速與殘尿，並寫入 Labs；體積 ≥25mL 自動勾選 N40.1。</p>
+          <div id="uro-measure-tag" class="score-tag hidden"></div>
+        </div>
+
         <div class="sub-block">
           <h3>影像與檢驗結果 Imaging &amp; labs</h3>
           <div class="row">
@@ -969,11 +1009,7 @@
             <label><input type="checkbox" value="R35.0 - Frequency of micturition"><span class="icd-code">R35.0</span> Frequency of micturition</label>
             <label><input type="checkbox" value="R35.1 - Nocturia"><span class="icd-code">R35.1</span> Nocturia</label>
             <label data-sex="female"><input type="checkbox" value="N32.81 - Overactive bladder"><span class="icd-code">N32.81</span> Overactive bladder</label>
-            <p class="hint" style="margin:8px 0 0;width:100%;">Frequency、Nocturia、Urgency 會依上方問卷作答自動勾選對應診斷（可自行取消）。</p>
-            <div data-sex="male" class="row" style="margin-top:8px;">
-              <div class="field"><label>攝護腺超音波體積 Prostate volume on sono (mL)</label><input type="number" id="luts-prostate-vol" placeholder="e.g. 32" min="0"></div>
-            </div>
-            <p class="hint" data-sex="male" style="margin-top:-2px;">體積 ≥25mL 會自動勾選 N40.1（可自行取消）。</p>
+            <p class="hint" style="margin:8px 0 0;width:100%;">Frequency、Nocturia、Urgency 會依問卷作答自動勾選；Objective 填攝護腺體積 ≥25mL 會自動勾選 N40.1（都可自行取消）。</p>
           </div>
 
           <div class="complaint-block icd-block hidden" data-cc="hematuria">
@@ -1083,10 +1119,48 @@
         </div>
 
         <div class="sub-block">
+          <h3>安排手術／檢查 Arranged surgery / exam</h3>
+          <p class="hint" style="margin-top:-4px;">這裡的項目會寫進 Plan 並存進紀錄；病人回診時，手術會自動帶成「s/p 手術 (日期)」，檢查會在 Objective 預留結果欄位。</p>
+          <div class="quickadd-group" id="arranged-quickadd"></div>
+          <div id="arranged-rows"></div>
+          <button type="button" class="add-row-btn" onclick="addArrangedRow()">＋ 新增手術／檢查</button>
+          <datalist id="arranged-names"></datalist>
+        </div>
+
+        <div class="sub-block">
           <h3>檢查提醒 Workup reminder <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">(僅供你參考，不會列入病歷文字)</span></h3>
           <div class="output-box" id="reminder-output">請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。</div>
         </div>
 
+      </div>
+    </div>
+
+    <div class="soap-group">
+      <div class="soap-header">
+        <span class="soap-letter">+</span>
+        <div class="soap-header-text">
+          <h2>Procedure</h2>
+          <p>今日處置紀錄（選填，會另成一段可單獨複製）</p>
+        </div>
+      </div>
+      <div class="soap-body">
+        <div class="sub-block">
+          <div class="row">
+            <div class="field">
+              <label>處置模板 Procedure template</label>
+              <select id="procedure-template">
+                <option value="">— 無處置 None —</option>
+                <option value="cystoscopy">膀胱鏡 Cystoscopy</option>
+                <option value="biopsy" data-sex="male">攝護腺切片 Prostate biopsy</option>
+                <option value="foley">更換尿管 Foley change</option>
+                <option value="cystostomy">更換膀胱造廔管 Cystostomy change</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1 1 100%;"><label>處置內容（選模板後可直接修改）</label><textarea id="p-procedure" style="min-height:140px;" placeholder="選擇上方模板，或自行輸入處置內容"></textarea></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1131,8 +1205,17 @@
         <div class="output-box" id="note-output-p"></div>
       </div>
 
+      <div class="soap-output-block hidden" id="procedure-output-block">
+        <div class="soap-output-header">
+          <span class="soap-output-letter">+</span>
+          <span class="soap-output-label">Procedure</span>
+          <button type="button" class="copy-icon-btn" onclick="copySection('procedure', this)" title="複製 Procedure">📋</button>
+        </div>
+        <div class="output-box" id="note-output-proc"></div>
+      </div>
+
       <button class="copy-btn" onclick="copyOutput()">複製全部文字 Copy</button>
-      <button class="save-btn" onclick="saveToFirebase()">☁ 儲存到雲端</button>
+      <button class="save-btn" id="cloud-save-btn" onclick="saveToFirebase()">☁ 儲存到雲端</button>
       <button class="reset-btn" onclick="resetForm()">👤 下一位病人（清空表單）</button>
       <div class="save-status" id="save-status"></div>
     </div>
@@ -1179,6 +1262,7 @@
       <button type="button" class="add-row-btn" onclick="exportRecordsCSV()">⬇ 匯出 CSV</button>
       <button type="button" class="add-row-btn" onclick="exportRecordsSQL()">⬇ 匯出 SQL</button>
     </div>
+    <div id="records-trends" class="hidden" style="margin-bottom:14px;"></div>
     <div id="records-list"></div>
 
     <div id="record-editor" class="hidden">
@@ -1200,6 +1284,7 @@
         </div>
       </div>
       <button class="save-btn" onclick="saveRecordEdit()">儲存修改</button>
+      <button class="copy-btn" style="margin-left:8px;" onclick="startReturnVisitFromEditor()">🔁 以此紀錄建立回診病歷</button>
       <button class="reset-btn" onclick="closeRecordEditor()">返回列表</button>
       <div class="save-status" id="editor-status"></div>
     </div>
@@ -1245,7 +1330,7 @@ function enterDemoMode(){
 
   document.getElementById('tab-btn-records').classList.add('hidden');
 
-  const saveBtn = document.querySelector('.save-btn');
+  const saveBtn = document.getElementById('cloud-save-btn');
   if(saveBtn) saveBtn.classList.add('hidden');
 
   const logoutBtn = document.querySelector('.logout-btn');
@@ -1261,39 +1346,48 @@ function enterDemoMode(){
 // Holds the most recently generated note so Copy/Save/per-section-copy
 // don't need to re-read it back out of the DOM.
 let lastFullNote = '';
-let sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
+let lastStructured = null;  // structured data saved alongside the note text
+let sectionTexts = { subjective:'', objective:'', assessment:'', plan:'', procedure:'' };
 
 // ====== 本機草稿自動暫存：僅存在此瀏覽器（localStorage），試用模式完全不啟用 ======
 const DRAFT_KEY = 'uroClinicNoteDraft_v1';
 const DRAFT_FIELD_IDS = ['p-name','p-id','p-age','p-sex','p-date-y','p-date-m','p-date-d',
   'chief-complaint','cc-duration','cc-note','smoking-py','p-meds','p-allergy','p-social','p-surgical',
-  'p-vs-bp','p-vs-pr','p-vs-bt','p-exam','p-imaging','plan-heading','plan-dx-summary','p-plan','luts-concurrent-uti','luts-prostate-vol'];
+  'p-vs-bp','p-vs-pr','p-vs-bt','p-exam','p-imaging','plan-heading','plan-dx-summary','p-plan','luts-concurrent-uti','luts-prostate-vol','m-psa','m-qmax','m-vv','m-pvr','procedure-template','p-procedure'];
+
+// Full snapshot of the note form; used for the local draft and saved with
+// each cloud record so a return visit can carry data forward.
+function collectFormSnapshot(){
+  const values = {};
+  DRAFT_FIELD_IDS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    values[id] = (el.type === 'checkbox') ? el.checked : el.value;
+  });
+  const checked = Array.from(document.querySelectorAll('#tab-note-view input[type=checkbox]:checked'))
+    .filter(el=>!DRAFT_FIELD_IDS.includes(el.id))
+    .map(el=>el.value);
+  const radios = {};
+  Array.from(document.querySelectorAll('#tab-note-view input[type=radio]:checked')).forEach(el=>{
+    if(el.name) radios[el.name] = el.value;
+  });
+  const activeIcdButtons = Array.from(document.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value);
+  const labRows = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>({
+    name: row.querySelector('.lab-name').value,
+    y: row.querySelector('.lab-y').value,
+    m: row.querySelector('.lab-m').value,
+    d: row.querySelector('.lab-d').value,
+    finding: row.querySelector('.lab-finding').value
+  }));
+  const pmh = Array.from(document.querySelectorAll('#pmh-fieldset input[type=checkbox]:checked')).map(el=>el.value);
+  return { values, checked, radios, activeIcdButtons, labRows, pmh, arranged: getArrangedItems(),
+    educationApplied: Array.from(appliedEducation), carriedStatusPost, visitType: currentVisitType };
+}
 
 function saveDraftToLocalStorage(){
   if(isDemoMode) return; // trial mode never persists anything, even locally
   try{
-    const values = {};
-    DRAFT_FIELD_IDS.forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      values[id] = (el.type === 'checkbox') ? el.checked : el.value;
-    });
-    const checked = Array.from(document.querySelectorAll('#tab-note-view input[type=checkbox]:checked'))
-      .filter(el=>!DRAFT_FIELD_IDS.includes(el.id))
-      .map(el=>el.value);
-    const radios = {};
-    Array.from(document.querySelectorAll('#tab-note-view input[type=radio]:checked')).forEach(el=>{
-      if(el.name) radios[el.name] = el.value;
-    });
-    const activeIcdButtons = Array.from(document.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value);
-    const labRows = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>({
-      name: row.querySelector('.lab-name').value,
-      y: row.querySelector('.lab-y').value,
-      m: row.querySelector('.lab-m').value,
-      d: row.querySelector('.lab-d').value,
-      finding: row.querySelector('.lab-finding').value
-    }));
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ values, checked, radios, activeIcdButtons, labRows }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(collectFormSnapshot()));
   }catch(e){ /* best-effort only (private browsing, quota, etc.) */ }
 }
 
@@ -1338,11 +1432,16 @@ function restoreDraftFromLocalStorage(){
     document.getElementById('lab-rows').innerHTML = '';
     draft.labRows.forEach(r=>addLabRow(r.name, r.y, r.m, r.d, r.finding));
   }
+  (draft.arranged||[]).forEach(a=>addArrangedRow(a.kind, a.name, a.y, a.m, a.d));
+  appliedEducation = new Set(draft.educationApplied || []);
+  carriedStatusPost = draft.carriedStatusPost || [];
+  setVisitType(draft.visitType || 'new');
   const concurrentUtiEl = document.getElementById('luts-concurrent-uti');
   if(concurrentUtiEl){
     document.getElementById('luts-oabss-block').classList.toggle('hidden', concurrentUtiEl.checked);
   }
   refreshPlanHeadingFromDiagnoses();
+  updateUroMeasureTag();
 
   document.getElementById('draft-restored-banner').classList.remove('hidden');
 }
@@ -1397,7 +1496,7 @@ function saveToFirebase(){
   const noteText = lastFullNote;
   if(!noteText){ statusEl.textContent = '請先產生病歷再儲存。'; return; }
   statusEl.textContent = '儲存中...';
-  db.collection('soap_notes').add({
+  db.collection('soap_notes').add(Object.assign({
     ownerUid: auth.currentUser ? auth.currentUser.uid : null,
     ownerEmail: auth.currentUser ? auth.currentUser.email : null,
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1406,7 +1505,7 @@ function saveToFirebase(){
     chiefComplaint: document.getElementById('chief-complaint').value,
     patientSex: document.getElementById('p-sex').value,
     noteText: noteText
-  }).then(function(){
+  }, lastStructured || {})).then(function(){
     clearDraftFromLocalStorage();
     statusEl.textContent = '已儲存 ✓';
     setTimeout(()=>{ statusEl.textContent=''; }, 2500);
@@ -1499,6 +1598,17 @@ function renderRecordsList(){
   });
   filtered = sortRecords(filtered, currentSortMode());
   currentFilteredRecords = filtered;
+
+  const trendsEl = document.getElementById('records-trends');
+  const mrns = new Set(filtered.map(r => (r.mrn || '').trim().toLowerCase()));
+  const singlePatient = mrnQuery && filtered.length && mrns.size === 1;
+  trendsEl.classList.toggle('hidden', !singlePatient);
+  if(singlePatient){
+    trendsEl.innerHTML = '<div class="trend-title" style="margin-bottom:6px;">📈 趨勢 Trends</div>';
+    const body = document.createElement('div');
+    trendsEl.appendChild(body);
+    renderTrends(body, filtered);
+  }
 
   // Only cap the default (unfiltered) browsing view; a search shows every match.
   const displayed = hasFilter ? filtered : filtered.slice(0, 50);
@@ -1740,6 +1850,7 @@ function selectComplaint(v, opts){
   document.querySelector('.cc-placeholder').classList.toggle('hidden', !!v);
   document.querySelector('.icd-placeholder').classList.toggle('hidden', !!v);
   document.querySelector('.quest-placeholder').classList.toggle('hidden', !!hasQuestionnaire[v]);
+  document.getElementById('uro-measure-block').classList.toggle('hidden', !uroMeasureComplaints.includes(v));
 
   const rest = document.getElementById('rest-of-form');
   const wasHidden = rest.classList.contains('hidden');
@@ -1897,12 +2008,12 @@ const planGeneralTemplates = [
 const planTemplates = {
   luts: [
     {label:"開始 Alpha-blocker", text:"Start alpha-blocker (e.g., Tamsulosin 0.4mg qd)"},
-    {label:"安排尿流速+PVR", text:"Arrange uroflowmetry and post-void residual (PVR)"},
+    {label:"安排尿流速+PVR", arrange:{kind:"exam", name:"uroflowmetry and PVR"}},
     {label:"回診前驗PSA", text:"Check PSA prior to next visit", sex:"male"}
   ],
   hematuria: [
-    {label:"安排CT urogram", text:"Arrange CT urogram"},
-    {label:"安排膀胱鏡", text:"Arrange cystoscopy"},
+    {label:"安排CT urogram", arrange:{kind:"exam", name:"CT urogram"}},
+    {label:"安排膀胱鏡", arrange:{kind:"exam", name:"cystoscopy"}},
     {label:"送尿液細胞學", text:"Urine cytology sent"}
   ],
   stone: [
@@ -1911,7 +2022,7 @@ const planTemplates = {
     {label:"回診驗尿+腎功能", text:"f/u 1 wk, U+K"},
     {label:"濾尿留石", text:"Strain urine, save stone if passed"},
     {label:"增加水分攝取", text:"Increase fluid intake >2L/day"},
-    {label:"安排ESWL", text:"Arrange ESWL (extracorporeal shock wave lithotripsy)"}
+    {label:"安排ESWL", arrange:{kind:"surgery", name:"ESWL"}}
   ],
   uti: [
     {label:"依藥敏開抗生素", text:"Antibiotics per C/S sensitivity, course 7 days"},
@@ -1929,7 +2040,7 @@ const planTemplates = {
     {label:"驗睪固酮", text:"Check morning testosterone level"}
   ],
   scrotal: [
-    {label:"安排陰囊超音波", text:"Arrange scrotal ultrasound"},
+    {label:"安排陰囊超音波", arrange:{kind:"exam", name:"scrotal ultrasound"}},
     {label:"止痛+托高", text:"NSAID for pain control; scrotal support/elevation advised"},
     {label:"急性惡化返診", text:"If worsening pain, return to ER immediately (r/o torsion)"}
   ]
@@ -1986,6 +2097,12 @@ function buildQuickAdd(generalContainerId, generalTemplates, perComplaintContain
           if(otherText !== t.text) removePhrase(targetTextareaId, otherText);
         });
       });
+      if(t.arrange){
+        const exists = getArrangedItems().some(a => a.name.toLowerCase() === t.arrange.name.toLowerCase());
+        if(!exists) addArrangedRow(t.arrange.kind, t.arrange.name);
+        applyEducationRules();
+        return;
+      }
       insertFn(targetTextareaId, t.text);
     });
   }
@@ -2022,6 +2139,8 @@ function applySexFilter(){
       inputs.forEach(input=>{ input.checked = false; });
     }
   });
+  const procSel = document.getElementById('procedure-template');
+  if(procSel.selectedOptions[0] && procSel.selectedOptions[0].classList.contains('hidden')) procSel.value = '';
   // ED (EHS, PDE5i, IIEF-5, N52.x) is male-only; drop it if sex flips to female.
   if(sex === 'female' && document.getElementById('chief-complaint').value === 'ed'){
     document.getElementById('chief-complaint').value = '';
@@ -2058,6 +2177,86 @@ const medsQuickEl = document.getElementById('meds-quickadd');
 medsQuickTemplates.forEach(t=>{
   medsQuickEl.appendChild(makeQuickBtn(t.label, ()=>insertLine('p-meds', t.text)));
 });
+
+// ---- Custom phrases: physician-defined quick-add buttons ----
+// Stored only in this browser (localStorage); disabled in trial mode.
+const CUSTOM_PHRASES_KEY = 'uroCustomPhrases_v1';
+const customPhraseTargets = {
+  exam: { container:'exam-general-quickadd', field:'p-exam', insert: insertPhrase },
+  plan: { container:'plan-general-quickadd', field:'p-plan', insert: insertLine },
+  meds: { container:'meds-quickadd',         field:'p-meds', insert: insertLine }
+};
+function loadCustomPhrases(){
+  try{ return Object.assign({ exam:[], plan:[], meds:[] }, JSON.parse(localStorage.getItem(CUSTOM_PHRASES_KEY) || '{}')); }
+  catch(e){ return { exam:[], plan:[], meds:[] }; }
+}
+function saveCustomPhrases(all){
+  try{ localStorage.setItem(CUSTOM_PHRASES_KEY, JSON.stringify(all)); }catch(e){}
+}
+function renderCustomPhrases(){
+  if(isDemoMode) return;
+  const all = loadCustomPhrases();
+  Object.keys(customPhraseTargets).forEach(key=>{
+    const cfg = customPhraseTargets[key];
+    const group = document.getElementById(cfg.container);
+    group.querySelectorAll('.custom-phrase').forEach(el => el.remove());
+    all[key].forEach((p, idx)=>{
+      const btn = makeQuickBtn('★ ' + p.label, ()=>cfg.insert(cfg.field, p.text));
+      btn.classList.add('custom-phrase');
+      btn.title = p.text;
+      const del = document.createElement('span');
+      del.className = 'custom-phrase-del';
+      del.textContent = ' ✕';
+      del.style.cssText = 'opacity:.6;margin-left:4px;';
+      del.title = '刪除此自訂常用句';
+      del.addEventListener('click', e=>{
+        e.stopPropagation();
+        if(!confirm(`刪除自訂常用句「${p.label}」？`)) return;
+        const cur = loadCustomPhrases();
+        cur[key].splice(idx, 1);
+        saveCustomPhrases(cur);
+        renderCustomPhrases();
+      });
+      btn.appendChild(del);
+      group.appendChild(btn);
+    });
+    const add = makeQuickBtn('＋ 自訂', ()=>toggleCustomPhraseForm(key));
+    add.classList.add('custom-phrase', 'add-custom-phrase');
+    group.appendChild(add);
+  });
+}
+function toggleCustomPhraseForm(key){
+  const group = document.getElementById(customPhraseTargets[key].container);
+  const existing = group.nextElementSibling;
+  if(existing && existing.classList.contains('custom-phrase-form')){ existing.remove(); return; }
+  const form = document.createElement('div');
+  form.className = 'row custom-phrase-form';
+  form.innerHTML =
+    '<div class="field"><label>按鈕名稱</label><input type="text" class="cp-label" placeholder="e.g. 攝護腺正常"></div>' +
+    '<div class="field" style="flex:2 1 240px;"><label>插入內容</label><input type="text" class="cp-text" placeholder="點按鈕時插入的文字"></div>';
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;align-items:flex-end;gap:6px;';
+  const save = document.createElement('button');
+  save.type = 'button'; save.className = 'add-row-btn'; save.textContent = '儲存';
+  save.addEventListener('click', ()=>{
+    const label = form.querySelector('.cp-label').value.trim();
+    const text = form.querySelector('.cp-text').value.trim();
+    if(!label || !text) return;
+    const cur = loadCustomPhrases();
+    cur[key].push({ label, text });
+    saveCustomPhrases(cur);
+    form.remove();
+    renderCustomPhrases();
+  });
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'add-row-btn'; cancel.textContent = '取消';
+  cancel.addEventListener('click', ()=>form.remove());
+  actions.append(save, cancel);
+  form.appendChild(actions);
+  group.insertAdjacentElement('afterend', form);
+  form.querySelector('.cp-label').focus();
+}
+renderCustomPhrases();
 
 // ---- Related/comorbid ICD-10 quick-select + auto-fill Plan heading ----
 const relatedIcdSuggestions = {
@@ -2206,6 +2405,7 @@ function refreshPlanHeadingFromDiagnoses(){
   }
 
   applyDiagnosisDefaultWorkup(values);
+  applyEducationRules();
 }
 document.getElementById('plan-heading').addEventListener('input', function(){ delete this.dataset.auto; });
 
@@ -2319,6 +2519,561 @@ function syncProstateVolIcd(){
   }
 }
 
+// ---- Structured urologic measurements: PSA density, uroflowmetry, PVR ----
+const uroMeasureComplaints = ['luts', 'incontinence'];
+function readNum(id){
+  const v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? null : v;
+}
+function computeUroMetrics(sex){
+  const m = { psa:null, vol:null, psad:null, qmax:readNum('m-qmax'), vv:readNum('m-vv'), pvr:readNum('m-pvr') };
+  if(sex === 'male'){
+    m.psa = readNum('m-psa');
+    m.vol = readNum('luts-prostate-vol');
+    if(m.psa !== null && m.vol) m.psad = m.psa / m.vol;
+  }
+  return m;
+}
+function uroflowInterpretation(m){
+  const notes = [];
+  if(m.qmax !== null){
+    if(m.vv !== null && m.vv < 150) notes.push('voided volume <150 mL, interpret Qmax with caution');
+    if(m.qmax < 10) notes.push('Qmax <10 mL/s, suggestive of bladder outlet obstruction');
+    else if(m.qmax <= 15) notes.push('Qmax 10-15 mL/s, equivocal');
+  }
+  if(m.pvr !== null){
+    if(m.pvr >= 300) notes.push('PVR >=300 mL, chronic urinary retention');
+    else if(m.pvr >= 100) notes.push('elevated PVR (>=100 mL)');
+  }
+  return notes;
+}
+function uroMetricsLines(m, rocDate){
+  const lines = [];
+  if(m.psa !== null){
+    let psaLine = `[${rocDate}] PSA: ${m.psa} ng/mL`;
+    if(m.psad !== null) psaLine += ` (PSA density ${m.psad.toFixed(2)} ng/mL/cc${m.psad > 0.15 ? ', >0.15' : ''})`;
+    lines.push(psaLine);
+  }
+  if(m.vol !== null) lines.push(`[${rocDate}] Prostate sono: volume ${m.vol} mL`);
+  const flow = [];
+  if(m.qmax !== null) flow.push(`Qmax ${m.qmax} mL/s`);
+  if(m.vv !== null) flow.push(`voided volume ${m.vv} mL`);
+  if(m.pvr !== null) flow.push(`PVR ${m.pvr} mL`);
+  if(flow.length){
+    const label = (m.qmax !== null || m.vv !== null) ? 'Uroflowmetry' : 'Bladder scan';
+    const interp = uroflowInterpretation(m);
+    lines.push(`[${rocDate}] ${label}: ${flow.join(', ')}` + (interp.length ? ` (${interp.join('; ')})` : ''));
+  }
+  return lines;
+}
+// Default-workup lab rows ("PSA: pending" etc.) that a filled structured
+// field supersedes, so the note doesn't list both.
+function labRowSupersededByMetrics(name, finding, m){
+  if(!/^pending/i.test(finding.trim())) return false;
+  if(name === 'PSA') return m.psa !== null;
+  if(/^Prostate ultrasound/.test(name)) return m.vol !== null;
+  if(name === 'Uroflow + PVR') return m.qmax !== null || m.pvr !== null;
+  return false;
+}
+function updateUroMeasureTag(){
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  const m = computeUroMetrics(sex);
+  const parts = [];
+  if(m.psad !== null) parts.push(`PSAD ${m.psad.toFixed(2)}${m.psad > 0.15 ? '（>0.15，建議進一步評估 mpMRI/切片）' : ''}`);
+  parts.push(...uroflowInterpretation(m));
+  const tag = document.getElementById('uro-measure-tag');
+  tag.textContent = parts.join(' · ');
+  tag.classList.toggle('hidden', parts.length === 0);
+}
+['m-psa','luts-prostate-vol','m-qmax','m-vv','m-pvr'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateUroMeasureTag);
+});
+
+// ---- Procedure note templates ----
+const procedureTemplates = {
+  cystoscopy: sex => [
+    'Procedure: Flexible cystoscopy',
+    'Indication: ',
+    'Anesthesia: 2% lidocaine jelly, intraurethral',
+    'Findings:',
+    '- Urethra: patent, no stricture',
+    sex === 'male' ? '- Prostate: lateral lobe hypertrophy, non-obstructive' : null,
+    '- Bladder: no tumor, no stone, no diverticulum; trabeculation: none',
+    '- Ureteral orifices: bilaterally normal in position, clear efflux',
+    'Complications: nil',
+    'Impression: '
+  ].filter(l => l !== null).join('\n'),
+  biopsy: (sex, m) => [
+    'Procedure: Transrectal ultrasound-guided prostate biopsy (12 cores)',
+    `Indication: PSA ${m.psa !== null ? m.psa : '__'} ng/mL`,
+    'Prophylaxis: oral antibiotic given',
+    'Anesthesia: periprostatic nerve block with 1% lidocaine',
+    `Prostate volume: ${m.vol !== null ? m.vol : '__'} mL`,
+    'Findings: ',
+    'Specimens: 12 cores sent for pathology',
+    'Complications: nil; patient tolerated the procedure well'
+  ].join('\n'),
+  foley: () => [
+    'Procedure: Foley catheter change',
+    'Old catheter removed; new __Fr silicone Foley catheter inserted under aseptic technique, balloon inflated with 10 mL sterile water.',
+    'Urine: clear, no hematuria',
+    'Complications: nil',
+    'Next change: in 4 weeks'
+  ].join('\n'),
+  cystostomy: () => [
+    'Procedure: Suprapubic cystostomy tube change',
+    'Old tube removed; new __Fr catheter inserted via the existing tract under aseptic technique, balloon inflated with 10 mL sterile water.',
+    'Urine: clear; stoma site clean without signs of infection',
+    'Complications: nil',
+    'Next change: in 4 weeks'
+  ].join('\n')
+};
+document.getElementById('procedure-template').addEventListener('change', function(){
+  const ta = document.getElementById('p-procedure');
+  if(!this.value){ return; }
+  if(ta.value.trim() && !confirm('要用模板取代目前的處置內容嗎？')){ return; }
+  const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
+  ta.value = procedureTemplates[this.value](sex, computeUroMetrics(sex));
+});
+
+// ---- Arranged surgery / exam (structured, saved with the record) ----
+const arrangedQuickPicks = [
+  {kind:'surgery', name:'laser TURP'}, {kind:'surgery', name:'TURP'}, {kind:'surgery', name:'HoLEP'},
+  {kind:'surgery', name:'ESWL'}, {kind:'surgery', name:'URS'}, {kind:'surgery', name:'RIRS'},
+  {kind:'surgery', name:'PCNL'}, {kind:'surgery', name:'TURBT'}, {kind:'surgery', name:'DJ stent removal'},
+  {kind:'exam', name:'cystoscopy'}, {kind:'exam', name:'CT urogram'}, {kind:'exam', name:'KUB'},
+  {kind:'exam', name:'renal ultrasound'}, {kind:'exam', name:'prostate MRI'}, {kind:'exam', name:'prostate biopsy'},
+  {kind:'exam', name:'scrotal ultrasound'}, {kind:'exam', name:'uroflowmetry and PVR'}
+];
+const surgeryNamePattern = /TURP|HoLEP|ThuLEP|PVP|laser|URS|RIRS|ESWL|PCNL|TURBT|ectomy|otomy|plasty|circumcision|vasectomy|sling|stent|lithotripsy|lithotomy|orchi/i;
+function classifyArranged(name){ return surgeryNamePattern.test(name) ? 'surgery' : 'exam'; }
+function formatRocDate(y, m, d){ return (y && m && d) ? `${y}/${m}/${d}` : ''; }
+
+function addArrangedRow(kind, name, y, m, d){
+  const container = document.getElementById('arranged-rows');
+  const row = document.createElement('div');
+  row.className = 'entry-row arranged-row';
+
+  const kindSel = document.createElement('select');
+  kindSel.className = 'arr-kind';
+  kindSel.style.width = 'auto';
+  [['surgery','手術'],['exam','檢查']].forEach(([v,label])=>{
+    const o = document.createElement('option'); o.value = v; o.textContent = label; kindSel.appendChild(o);
+  });
+  kindSel.value = kind || 'surgery';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text'; nameInput.className = 'arr-name';
+  nameInput.placeholder = 'e.g. laser TURP / cystoscopy';
+  nameInput.setAttribute('list', 'arranged-names');
+  nameInput.value = name || '';
+  nameInput.addEventListener('change', ()=>{ if(!kind) kindSel.value = classifyArranged(nameInput.value); });
+
+  const dateGroup = document.createElement('div');
+  dateGroup.className = 'lab-date-group';
+  [['arr-y','民國年',y,'88px'],['arr-m','月',m,'60px'],['arr-d','日',d,'60px']].forEach(([cls,ph,val,w],i)=>{
+    if(i) { const s = document.createElement('span'); s.textContent = '/'; dateGroup.appendChild(s); }
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.className = cls; inp.placeholder = ph; inp.value = val || ''; inp.style.width = w;
+    dateGroup.appendChild(inp);
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'remove-row-btn'; removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', ()=>row.remove());
+
+  row.append(kindSel, nameInput, dateGroup, removeBtn);
+  container.appendChild(row);
+  return row;
+}
+
+function getArrangedItems(){
+  return Array.from(document.querySelectorAll('#arranged-rows .arranged-row')).map(row=>({
+    kind: row.querySelector('.arr-kind').value,
+    name: row.querySelector('.arr-name').value.trim(),
+    y: row.querySelector('.arr-y').value,
+    m: row.querySelector('.arr-m').value,
+    d: row.querySelector('.arr-d').value
+  })).filter(a => a.name);
+}
+
+// Free-text "Arrange X [on 115/10/1]" plan lines (and notes saved before
+// arranged rows existed) still count as arrangements.
+function parseArrangedFromText(text){
+  const items = [];
+  (text || '').split('\n').forEach(line=>{
+    const mt = line.trim().replace(/^\.\s*/, '').match(/^Arrange\s+(.+?)(?:\s+on\s+(\d+)\/(\d+)\/(\d+))?\s*$/i);
+    if(!mt) return;
+    items.push({ kind: classifyArranged(mt[1]), name: mt[1], y: mt[2] || '', m: mt[3] || '', d: mt[4] || '' });
+  });
+  return items;
+}
+function arrangedPlanLine(a){
+  const date = formatRocDate(a.y, a.m, a.d);
+  return `Arrange ${a.name}` + (date ? ` on ${date}` : '');
+}
+
+// ---- Counseling sentences auto-added to the Plan ----
+// Each rule inserts its line at most once per patient: if the physician
+// deletes it, it is not re-added (tracked in appliedEducation).
+const FEVER_ER = "Informed if fever or chillness, please come back to ER";
+const educationRules = [
+  { id:'stone-procedure', lines:[FEVER_ER, "Increase fluid intake >2L/day"],
+    test: c => c.procedures.some(n => /ESWL|URS|RIRS|PCNL|lithotripsy|DJ/i.test(n)) },
+  { id:'stone-dx', lines:["Increase fluid intake >2L/day"],
+    test: c => c.codes.some(code => /^(N20\.|N21\.0|N13\.2|N23)/.test(code)) },
+  { id:'uti', lines:[FEVER_ER],
+    test: c => c.codes.some(code => /^(N39\.0|N30\.)/.test(code)) },
+  { id:'prostate-surgery-sp', lines:["Informed post-op hematuria may occur; if clot retention or unable to void, please come back to ER"],
+    test: c => c.statusPost.some(n => /TURP|HoLEP|ThuLEP|PVP|laser/i.test(n)) },
+  { id:'turbt-sp', lines:["Informed if gross hematuria with clots or fever, please come back to ER"],
+    test: c => c.statusPost.some(n => /TURBT/i.test(n)) },
+  { id:'biopsy', lines:["Informed if fever, chills, or persistent gross hematuria after prostate biopsy, please come back to ER"],
+    test: c => c.procedureTemplate === 'biopsy' || c.arrangedNames.some(n => /biopsy/i.test(n)) },
+  { id:'cystoscopy-today', lines:["Informed mild dysuria or hematuria may occur after cystoscopy; drink more water"],
+    test: c => c.procedureTemplate === 'cystoscopy' },
+  { id:'catheter', lines:["Informed if fever, catheter blockage, or no urine drainage, please come back to ER"],
+    test: c => c.procedureTemplate === 'foley' || c.procedureTemplate === 'cystostomy' },
+  { id:'alpha-blocker', lines:["Informed possible dizziness or orthostatic hypotension with alpha-blocker; rise slowly"],
+    test: c => /tamsulosin|silodosin|doxazosin|alfuzosin|terazosin|alpha-blocker/i.test(c.medText) },
+  { id:'pde5i', lines:["Informed not to use PDE5 inhibitor together with nitrates"],
+    test: c => /sildenafil|tadalafil|vardenafil|PDE5 inhibitor trial/i.test(c.medText) }
+];
+let appliedEducation = new Set();
+let carriedStatusPost = [];   // surgeries done since the last visit (return visits)
+
+function applyEducationRules(){
+  if(!document.getElementById('chief-complaint').value) return;
+  const arranged = getArrangedItems();
+  const ctx = {
+    codes: currentIcdSelections().map(v => parseIcdValue(v).code),
+    arrangedNames: arranged.map(a => a.name),
+    statusPost: carriedStatusPost.map(a => a.name),
+    procedures: arranged.filter(a => a.kind === 'surgery').map(a => a.name).concat(carriedStatusPost.map(a => a.name)),
+    procedureTemplate: document.getElementById('procedure-template').value,
+    medText: document.getElementById('p-meds').value + '\n' + document.getElementById('p-plan').value
+  };
+  educationRules.forEach(rule=>{
+    if(appliedEducation.has(rule.id) || !rule.test(ctx)) return;
+    rule.lines.forEach(line => insertLine('p-plan', line, {silent:true}));
+    appliedEducation.add(rule.id);
+  });
+}
+document.getElementById('procedure-template').addEventListener('change', applyEducationRules);
+
+// ---- New vs return visit; carry data forward from a saved record ----
+let currentVisitType = 'new';
+function setVisitType(type){
+  currentVisitType = type;
+  document.getElementById('visit-new-btn').classList.toggle('active', type === 'new');
+  document.getElementById('visit-return-btn').classList.toggle('active', type === 'return');
+  document.getElementById('return-visit-panel').classList.toggle('hidden', type !== 'return');
+  if(type !== 'return') document.getElementById('prev-visit-panel').classList.add('hidden');
+}
+
+const shortDxByCode = {
+  "N40.0":"BPH", "N40.1":"BPH", "N41.1":"Chronic prostatitis",
+  "N20.0":"Renal stone", "N20.1":"Ureteral stone", "N20.2":"Renal and ureteral stone", "N20.9":"Urinary stone", "N21.0":"Bladder stone",
+  "C67.9":"Bladder tumor", "C62.90":"Testicular tumor", "N39.0":"UTI", "N32.81":"OAB",
+  "N39.3":"SUI", "N39.41":"UUI", "N39.46":"MUI", "N52.9":"ED", "N43.3":"Hydrocele"
+};
+function recordMillis(r){ return (r.createdAt && r.createdAt.toMillis) ? r.createdAt.toMillis() : 0; }
+function rocFromNoteText(text){
+  const mt = (text || '').match(/\[(\d{3})(\d{2})(\d{2})\]/);
+  return mt ? `${parseInt(mt[1],10)}/${parseInt(mt[2],10)}/${parseInt(mt[3],10)}` : '';
+}
+function noteSection(text, name){
+  const headers = ['SUBJECTIVE','OBJECTIVE','ASSESSMENT','PLAN','PROCEDURE'];
+  let inSection = false;
+  const out = [];
+  (text || '').split('\n').forEach(line=>{
+    if(headers.includes(line.trim())){ inSection = line.trim() === name; return; }
+    if(inSection) out.push(line);
+  });
+  return out.join('\n').trim();
+}
+
+// Normalizes a saved record — new ones carry structured fields, older ones
+// only have the note text — into what carry-forward needs.
+function extractCarryData(r){
+  const fd = r.formData || null;
+  const values = fd ? (fd.values || {}) : {};
+  const icd = r.icd || noteSection(r.noteText, 'ASSESSMENT').split('\n')
+    .map(l => l.trim().match(/^\d+\.\s+([A-Z]\d{2}(?:\.\d+)?\s+-\s+.+)$/)).filter(Boolean).map(mt => mt[1]);
+  let planHeading = values['plan-heading'];
+  if(planHeading === undefined){
+    const first = (noteSection(r.noteText, 'PLAN').split('\n')[0] || '').trim();
+    planHeading = first.startsWith('[') ? '' : first;
+  }
+  return {
+    name: values['p-name'] !== undefined ? values['p-name'] : (r.patientName || ''),
+    age: values['p-age'] !== undefined ? values['p-age'] : (r.age || ''),
+    sex: values['p-sex'] || r.patientSex || 'male',
+    cc: r.chiefComplaint || values['chief-complaint'] || '',
+    icd, planHeading,
+    meds: values['p-meds'] || '', allergy: values['p-allergy'] || '', social: values['p-social'] || '',
+    surgical: values['p-surgical'] || '', smokingPy: values['smoking-py'] || '',
+    pmh: fd ? (fd.pmh || []) : [],
+    arranged: r.arranged || parseArrangedFromText(noteSection(r.noteText, 'PLAN')),
+    visitDate: r.visitDateRoc || rocFromNoteText(r.noteText)
+  };
+}
+
+// Fills today's form from a previous visit. Date stays today. Surgeries
+// arranged last time become "Dx s/p X (date)"; exams arranged last time get
+// an "Exam (date): " result line in Objective. Returns a status summary.
+function carryForwardFromRecord(r, history){
+  const c = extractCarryData(r);
+  const mrn = r.mrn || document.getElementById('p-id').value;
+  clearFormFields();
+  setVisitType('return');
+  document.getElementById('p-id').value = mrn;
+  document.getElementById('p-name').value = c.name;
+  document.getElementById('p-age').value = c.age;
+  document.getElementById('p-sex').value = c.sex === 'female' ? 'female' : 'male';
+  applySexFilter();
+  document.getElementById('p-meds').value = c.meds;
+  document.getElementById('p-allergy').value = c.allergy;
+  document.getElementById('p-social').value = c.social;
+  document.getElementById('smoking-py').value = c.smokingPy;
+  c.pmh.forEach(v=>{
+    const el = Array.from(document.querySelectorAll('#pmh-fieldset input')).find(e => e.value === v);
+    if(el) el.checked = true;
+  });
+
+  const surgeries = c.arranged.filter(a => a.kind === 'surgery');
+  const exams = c.arranged.filter(a => a.kind === 'exam');
+  const spText = surgeries.map(a=>{
+    const d = formatRocDate(a.y, a.m, a.d);
+    return `s/p ${a.name}` + (d ? ` (${d})` : '');
+  });
+  carriedStatusPost = surgeries.map(a => ({ name: a.name, date: formatRocDate(a.y, a.m, a.d) }));
+
+  let icdCount = 0;
+  if(c.cc){
+    selectComplaint(c.cc, {skipScroll:true});
+    const icdBlock = document.querySelector('.icd-block[data-cc="'+c.cc+'"]');
+    if(icdBlock) c.icd.forEach(v=>{
+      const code = parseIcdValue(v).code;
+      const cb = Array.from(icdBlock.querySelectorAll('input[type=checkbox]')).find(e => parseIcdValue(e.value).code === code);
+      if(cb && !cb.closest('[data-sex].hidden')){ cb.checked = true; icdCount++; return; }
+      const btn = Array.from(icdBlock.querySelectorAll('.related-icd-btn')).find(e => parseIcdValue(e.dataset.value).code === code);
+      if(btn && !btn.classList.contains('hidden')){ btn.classList.add('active'); icdCount++; }
+    });
+  }
+
+  const headingEl = document.getElementById('plan-heading');
+  refreshPlanHeadingFromDiagnoses();
+  const autoHeading = headingEl.value;
+  let heading = c.planHeading || autoHeading;
+  if(spText.length){
+    if(/\bs\/p\b/.test(heading)){
+      heading = `${heading}, ${spText.join(', ')}`;
+    } else {
+      const shorts = [...new Set(c.icd.map(v => shortDxByCode[parseIcdValue(v).code]).filter(Boolean))];
+      const base = shorts.length ? shorts.join(' / ') : (heading || complaintDisplayLabel(c.cc, c.sex));
+      heading = `${base} ${spText.join(', ')}`;
+    }
+  }
+  if(heading !== autoHeading){
+    headingEl.value = heading;
+    delete headingEl.dataset.auto;
+  }
+
+  let surgical = c.surgical;
+  spText.forEach(t=>{ if(!surgical.includes(t)) surgical = surgical ? `${surgical}; ${t}` : t; });
+  document.getElementById('p-surgical').value = surgical;
+
+  const examLines = exams.filter(a => !/uroflow|PVR/i.test(a.name)).map(a=>{
+    const d = formatRocDate(a.y, a.m, a.d);
+    return `${a.name.charAt(0).toUpperCase()}${a.name.slice(1)}${d ? ` (${d})` : ''}: `;
+  });
+  document.getElementById('p-imaging').value = examLines.join('\n');
+  applyEducationRules();
+
+  document.getElementById('prev-note-text').textContent = (c.visitDate ? `上次就診 ${c.visitDate}\n\n` : '') + (r.noteText || '');
+  renderTrends(document.getElementById('prev-trends'), history || [r]);
+  document.getElementById('prev-visit-panel').classList.remove('hidden');
+
+  const parts = [`已帶入${c.visitDate ? ` ${c.visitDate} ` : '上次'}病歷`];
+  if(icdCount) parts.push(`診斷 ${icdCount} 項`);
+  if(spText.length) parts.push(`手術 → ${spText.join(', ')}`);
+  if(examLines.length) parts.push(`檢查 ${examLines.length} 項待填結果`);
+  if(history && history.length > 1) parts.push(`共 ${history.length} 次就診紀錄`);
+  return parts.join('；') + '。';
+}
+
+function loadReturnVisit(){
+  const statusEl = document.getElementById('return-visit-status');
+  if(isDemoMode){ statusEl.textContent = '試用模式無法讀取紀錄。'; return; }
+  const mrn = document.getElementById('p-id').value.trim();
+  if(!mrn){ statusEl.textContent = '請先輸入病歷號。'; return; }
+  const uid = auth.currentUser ? auth.currentUser.uid : null;
+  if(!uid){ statusEl.textContent = '尚未登入。'; return; }
+  statusEl.textContent = '搜尋中...';
+  db.collection('soap_notes').where('ownerUid','==',uid).get().then(snapshot=>{
+    const recs = [];
+    snapshot.forEach(doc=>{
+      const d = doc.data();
+      if((d.mrn || '').trim().toLowerCase() === mrn.toLowerCase()) recs.push(Object.assign({ id: doc.id }, d));
+    });
+    recs.sort((a,b) => recordMillis(b) - recordMillis(a));
+    if(!recs.length){ statusEl.textContent = '找不到此病歷號的紀錄，請以新病人方式填寫。'; return; }
+    const summary = carryForwardFromRecord(recs[0], recs);
+    document.getElementById('return-visit-status').textContent = summary;
+  }).catch(err=>{ statusEl.textContent = '讀取失敗：' + err.message; });
+}
+
+// ---- Trend small multiples (one metric per chart, from saved record metrics) ----
+const trendMetrics = [
+  { key:'ipss',  label:'IPSS',               unit:'/35',   refs:[8, 20] },
+  { key:'oabss', label:'OAB-SS',             unit:'/15',   refs:[] },
+  { key:'iief',  label:'IIEF-5',             unit:'/25',   refs:[22] },
+  { key:'psa',   label:'PSA',                unit:'ng/mL', refs:[4] },
+  { key:'vol',   label:'Prostate volume',    unit:'mL',    refs:[25] },
+  { key:'qmax',  label:'Qmax',               unit:'mL/s',  refs:[10] },
+  { key:'pvr',   label:'PVR',                unit:'mL',    refs:[100] }
+];
+function recordVisitTime(r){
+  const roc = r.visitDateRoc || rocFromNoteText(r.noteText);
+  const mt = roc.match(/^(\d+)\/(\d+)\/(\d+)$/);
+  if(mt) return new Date(parseInt(mt[1],10) + 1911, parseInt(mt[2],10) - 1, parseInt(mt[3],10)).getTime();
+  return recordMillis(r);
+}
+function recordVisitLabel(r){
+  return r.visitDateRoc || rocFromNoteText(r.noteText) || (r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleDateString() : '');
+}
+function svgEl(tag, attrs){
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
+  return el;
+}
+function renderTrends(container, history){
+  container.innerHTML = '';
+  const visits = (history || []).filter(r => r.metrics).slice().sort((a,b) => recordVisitTime(a) - recordVisitTime(b));
+  const cards = [];
+  trendMetrics.forEach(def=>{
+    const pts = visits.filter(r => typeof r.metrics[def.key] === 'number')
+      .map(r => ({ t: recordVisitTime(r), v: r.metrics[def.key], label: recordVisitLabel(r) }));
+    if(!pts.length) return;
+    const card = document.createElement('div');
+    card.className = 'trend-card';
+    const title = document.createElement('div');
+    title.className = 'trend-title';
+    title.textContent = `${def.label} (${def.unit})`;
+    card.appendChild(title);
+
+    if(pts.length === 1){
+      const stat = document.createElement('div');
+      stat.className = 'trend-stat';
+      stat.textContent = pts[0].v;
+      const sub = document.createElement('div');
+      sub.className = 'trend-sub';
+      sub.textContent = `${pts[0].label}（僅一次紀錄）`;
+      card.append(stat, sub);
+      cards.push(card);
+      return;
+    }
+
+    const W = 300, H = 120, L = 30, R = 34, T = 12, B = 22;
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+    const x = (p, i) => t1 > t0 ? L + (p.t - t0) / (t1 - t0) * (W - L - R) : L + i / (pts.length - 1) * (W - L - R);
+    const yMax = Math.max(...pts.map(p => p.v), ...def.refs) * 1.15 || 1;
+    const y = v => T + (1 - v / yMax) * (H - T - B);
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img',
+      'aria-label': `${def.label} trend: ` + pts.map(p => `${p.label} ${p.v}`).join(', ') });
+
+    svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: y(0), y2: y(0), stroke: '#D9DED8', 'stroke-width': 1 }));
+    def.refs.forEach(ref=>{
+      svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: y(ref), y2: y(ref), stroke: '#B7BFB8', 'stroke-width': 1, 'stroke-dasharray': '3 3' }));
+      const lbl = svgEl('text', { x: L - 4, y: y(ref) + 3, 'text-anchor': 'end', 'font-size': 9, fill: '#556058' });
+      lbl.textContent = ref;
+      svg.appendChild(lbl);
+    });
+    svg.appendChild(svgEl('polyline', {
+      points: pts.map((p, i) => `${x(p, i)},${y(p.v)}`).join(' '),
+      fill: 'none', stroke: '#2F5D62', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+    }));
+    const tip = document.createElement('div');
+    tip.className = 'trend-tip hidden';
+    pts.forEach((p, i)=>{
+      const cx = x(p, i), cy = y(p.v);
+      svg.appendChild(svgEl('circle', { cx, cy, r: 4, fill: '#2F5D62', stroke: '#FCFDFC', 'stroke-width': 2 }));
+      const hit = svgEl('circle', { cx, cy, r: 12, fill: 'transparent', style: 'cursor:default' });
+      hit.addEventListener('mouseenter', ()=>{
+        tip.textContent = `${p.label}：${p.v} ${def.unit}`;
+        tip.style.left = (cx / W * 100) + '%';
+        tip.style.top = (cy / H * svg.getBoundingClientRect().height + title.offsetHeight + 8) + 'px';
+        tip.classList.remove('hidden');
+      });
+      hit.addEventListener('mouseleave', ()=> tip.classList.add('hidden'));
+      svg.appendChild(hit);
+    });
+    const last = pts[pts.length - 1];
+    const lastLbl = svgEl('text', { x: x(last, pts.length - 1) + 7, y: y(last.v) + 4, 'font-size': 11, 'font-weight': 600, fill: '#22302C' });
+    lastLbl.textContent = last.v;
+    svg.appendChild(lastLbl);
+    [[pts[0], 0, 'start'], [last, pts.length - 1, 'end']].forEach(([p, i, anchor])=>{
+      const dl = svgEl('text', { x: x(p, i), y: H - 6, 'text-anchor': anchor, 'font-size': 9, fill: '#556058' });
+      dl.textContent = p.label;
+      svg.appendChild(dl);
+    });
+    card.append(svg, tip);
+    cards.push(card);
+  });
+
+  if(!cards.length){
+    container.innerHTML = '<p class="hint" style="margin:0;">尚無可繪製趨勢的數據（IPSS、PSA、攝護腺體積、Qmax、PVR 需在新版工具中填寫並儲存）。</p>';
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'trend-grid';
+  cards.forEach(c => grid.appendChild(c));
+  container.appendChild(grid);
+
+  const details = document.createElement('details');
+  details.innerHTML = '<summary style="cursor:pointer;font-size:0.78rem;color:var(--ink-soft);margin-top:6px;">數值表</summary>';
+  const table = document.createElement('table');
+  table.className = 'trend-table';
+  const shown = trendMetrics.filter(d => visits.some(r => typeof r.metrics[d.key] === 'number'));
+  const head = document.createElement('tr');
+  ['日期'].concat(shown.map(d => d.label)).forEach(h=>{ const th = document.createElement('th'); th.textContent = h; head.appendChild(th); });
+  table.appendChild(head);
+  visits.forEach(r=>{
+    const tr = document.createElement('tr');
+    [recordVisitLabel(r)].concat(shown.map(d => typeof r.metrics[d.key] === 'number' ? r.metrics[d.key] : '—'))
+      .forEach(v=>{ const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+    table.appendChild(tr);
+  });
+  details.appendChild(table);
+  container.appendChild(details);
+}
+
+function startReturnVisitFromEditor(){
+  const record = recordsCache.find(r => r.id === document.getElementById('editor-record-id').value);
+  if(!record) return;
+  const key = (record.mrn || '').trim().toLowerCase();
+  const history = key ? recordsCache.filter(r => (r.mrn || '').trim().toLowerCase() === key) : [record];
+  history.sort((a,b) => recordMillis(b) - recordMillis(a));
+  switchTab('note');
+  const summary = carryForwardFromRecord(record, history);
+  document.getElementById('return-visit-status').textContent = summary;
+  window.scrollTo({ top: 0 });
+}
+
+(function buildArrangedQuickPicks(){
+  const group = document.getElementById('arranged-quickadd');
+  const list = document.getElementById('arranged-names');
+  arrangedQuickPicks.forEach(p=>{
+    group.appendChild(makeQuickBtn((p.kind === 'surgery' ? '🔪 ' : '🔍 ') + p.name, ()=>{
+      const exists = getArrangedItems().some(a => a.name.toLowerCase() === p.name.toLowerCase());
+      if(!exists) addArrangedRow(p.kind, p.name);
+      applyEducationRules();
+    }));
+    const o = document.createElement('option'); o.value = p.name; list.appendChild(o);
+  });
+})();
+
 function scoreIIEF(){
   let total=0, answered=0;
   for(let i=0;i<5;i++){
@@ -2390,6 +3145,7 @@ function generateNote(){
     icdSelections = icdSelections.concat(Array.from(icdBlock.querySelectorAll('.related-icd-btn.active')).map(el=>el.dataset.value));
   }
 
+  applyEducationRules();
   const examFindings = document.getElementById('p-exam').value;
   const planNotes = document.getElementById('p-plan').value;
 
@@ -2475,15 +3231,20 @@ function generateNote(){
   const vitalsText = vsParts.length ? vsParts.join(', ') : '[to be recorded]';
 
   const imagingText = document.getElementById('p-imaging').value.trim();
+  const uroMetrics = uroMeasureComplaints.includes(cc)
+    ? computeUroMetrics(sex)
+    : { psa:null, vol:null, psad:null, qmax:null, vv:null, pvr:null };
+  const metricLines = uroMetricsLines(uroMetrics, rocFullDate);
   const labEntries = Array.from(document.querySelectorAll('#lab-rows .entry-row')).map(row=>{
     const nm = row.querySelector('.lab-name').value || 'Lab';
     const y = row.querySelector('.lab-y').value;
     const m = row.querySelector('.lab-m').value;
     const d = row.querySelector('.lab-d').value;
     const finding = row.querySelector('.lab-finding').value;
-    return finding ? `[${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}] ${nm}: ${finding}` : null;
+    if(!finding || labRowSupersededByMetrics(nm, finding, uroMetrics)) return null;
+    return `[${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}] ${nm}: ${finding}`;
   }).filter(Boolean);
-  const labsImagingText = [imagingText, ...labEntries].filter(Boolean).join('\n');
+  const labsImagingText = [imagingText, ...metricLines, ...labEntries].filter(Boolean).join('\n');
 
   let objective =
 `Vital Signs: ${vitalsText}
@@ -2513,7 +3274,9 @@ ${labsImagingText || "None available at this visit; see Plan for recommended wor
   if(!planDxSummary && imagingText){
     planDxSummary = imagingText.split('\n')[0];
   }
-  const planItemsRaw = planNotes.split('\n').map(l=>l.trim()).filter(Boolean);
+  const arrangedItems = getArrangedItems();
+  const planItemsRaw = planNotes.split('\n').map(l=>l.trim()).filter(Boolean)
+    .concat(arrangedItems.map(arrangedPlanLine));
   const planItems = planItemsRaw.map(l => l.startsWith('.') ? l : '. '+l);
 
   let plan = '';
@@ -2539,12 +3302,38 @@ ${assessment}
 PLAN
 ${plan}`;
 
-  sectionTexts = { subjective, objective, assessment, plan };
-  lastFullNote = note;
+  const procedureRaw = document.getElementById('p-procedure').value.trim();
+  const procedure = procedureRaw ? `[${rocFullDate}]\n${procedureRaw}` : '';
+
+  sectionTexts = { subjective, objective, assessment, plan, procedure };
+  lastFullNote = procedure ? `${note}\n\nPROCEDURE\n${procedure}` : note;
+
+  const arrangedForRecord = arrangedItems.slice();
+  parseArrangedFromText(planNotes).forEach(a=>{
+    if(!arrangedForRecord.some(x => x.name.toLowerCase() === a.name.toLowerCase())) arrangedForRecord.push(a);
+  });
+  const oabResult = lutsOab || oab;
+  lastStructured = {
+    visitType: currentVisitType,
+    visitDateRoc: `${parseInt(rocY,10)}/${parseInt(rocM,10)}/${parseInt(rocD,10)}`,
+    age: document.getElementById('p-age').value.trim(),
+    icd: icdSelections,
+    arranged: arrangedForRecord,
+    statusPost: carriedStatusPost,
+    metrics: {
+      ipss: ipss ? ipss.total : null, ipssQol: ipss ? ipss.qol : null,
+      oabss: oabResult ? oabResult.total : null, iief: iief ? iief.total : null,
+      psa: uroMetrics.psa, vol: uroMetrics.vol, psad: uroMetrics.psad,
+      qmax: uroMetrics.qmax, vv: uroMetrics.vv, pvr: uroMetrics.pvr
+    },
+    formData: collectFormSnapshot()
+  };
   document.getElementById('note-output-s').textContent = subjective;
   document.getElementById('note-output-o').textContent = objective;
   document.getElementById('note-output-a').textContent = assessment;
   document.getElementById('note-output-p').textContent = plan;
+  document.getElementById('note-output-proc').textContent = procedure;
+  document.getElementById('procedure-output-block').classList.toggle('hidden', !procedure);
   document.getElementById('output-section').style.display = 'block';
   document.getElementById('output-section').scrollIntoView({behavior:'smooth'});
 
@@ -2834,12 +3623,21 @@ function clearFormFields(){
   document.getElementById('luts-oabss-block').classList.remove('hidden');
 
   // Free-text fields
-  ['smoking-py','p-meds','p-allergy','p-social','p-surgical','p-vs-bp','p-vs-pr','p-vs-bt','luts-prostate-vol','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
+  ['smoking-py','p-meds','p-allergy','p-social','p-surgical','p-vs-bp','p-vs-pr','p-vs-bt','luts-prostate-vol','m-psa','m-qmax','m-vv','m-pvr','p-procedure','p-exam','p-imaging','plan-dx-summary','p-plan'].forEach(id=>{
     document.getElementById(id).value = '';
   });
   const headingEl = document.getElementById('plan-heading');
   headingEl.value = '';
   delete headingEl.dataset.auto;
+
+  document.getElementById('arranged-rows').innerHTML = '';
+  appliedEducation = new Set();
+  carriedStatusPost = [];
+  lastStructured = null;
+  setVisitType('new');
+  document.getElementById('return-visit-status').textContent = '';
+  document.getElementById('prev-note-text').textContent = '';
+  document.getElementById('prev-trends').innerHTML = '';
 
   // Lab rows: clear back to a single blank row
   document.getElementById('lab-rows').innerHTML = '';
@@ -2851,6 +3649,8 @@ function clearFormFields(){
   document.querySelector('.cc-placeholder').classList.remove('hidden');
   document.querySelector('.icd-placeholder').classList.remove('hidden');
   document.querySelector('.quest-placeholder').classList.remove('hidden');
+  document.getElementById('uro-measure-block').classList.add('hidden');
+  document.getElementById('uro-measure-tag').classList.add('hidden');
   document.getElementById('reminder-output').textContent = '請先點選主訴，此處會依主訴與紅旗症狀顯示建議安排的檢查。';
 
   // Cancer stage & guideline reference is not patient-specific, but reset
@@ -2864,11 +3664,13 @@ function clearFormFields(){
 
   // Clear generated note and score tags
   document.getElementById('output-section').style.display = 'none';
-  ['note-output-s','note-output-o','note-output-a','note-output-p'].forEach(id=>{
+  document.getElementById('procedure-output-block').classList.add('hidden');
+  document.getElementById('procedure-template').value = '';
+  ['note-output-s','note-output-o','note-output-a','note-output-p','note-output-proc'].forEach(id=>{
     document.getElementById(id).textContent = '';
   });
   lastFullNote = '';
-  sectionTexts = { subjective:'', objective:'', assessment:'', plan:'' };
+  sectionTexts = { subjective:'', objective:'', assessment:'', plan:'', procedure:'' };
   document.getElementById('save-status').textContent = '';
   ['ipss-score','oabss-score','luts-oabss-score','iief-score'].forEach(id=>{
     const el = document.getElementById(id);
