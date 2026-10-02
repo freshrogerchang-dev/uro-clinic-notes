@@ -978,6 +978,7 @@
           <div class="row">
             <div class="field" style="flex:1 1 100%;">
               <label>檢驗結果 Lab results（自動加上民國年月日，如 [1150912] U/A）</label>
+              <div id="lab-quickadd"></div>
               <div id="lab-rows"></div>
               <button type="button" class="add-row-btn" onclick="addLabRow()">＋ 新增檢驗結果</button>
             </div>
@@ -2178,6 +2179,43 @@ medsQuickTemplates.forEach(t=>{
   medsQuickEl.appendChild(makeQuickBtn(t.label, ()=>insertLine('p-meds', t.text)));
 });
 
+// ---- Quick-add lab/exam rows per complaint (clicked by the physician, never auto-added) ----
+const labQuickTemplates = {
+  luts: [{name:'DRE', sex:'male'}, {name:'PSA', sex:'male'}, {name:'Prostate sono', sex:'male'}, {name:'Uroflow + PVR'}, {name:'U/A'}],
+  hematuria: [{name:'U/A'}, {name:'Urine cytology'}, {name:'Renal & bladder US'}, {name:'CT urogram'}],
+  stone: [{name:'U/A'}, {name:'KUB (X-ray)'}, {name:'CT KUB'}, {name:'Renal US'}],
+  uti: [{name:'U/A'}, {name:'Urine C/S'}],
+  incontinence: [{name:'U/A'}, {name:'Uroflow + PVR'}],
+  ed: [{name:'Testosterone'}, {name:'HbA1c'}, {name:'Lipid panel'}],
+  scrotal: [{name:'Scrotal US'}, {name:'AFP'}, {name:'Beta-hCG'}, {name:'LDH'}],
+  other: [{name:'U/A'}]
+};
+function addLabRowFromButton(name){
+  const rows = Array.from(document.querySelectorAll('#lab-rows .entry-row'));
+  let row = rows.find(r => r.querySelector('.lab-name').value.trim().toLowerCase() === name.toLowerCase());
+  if(!row){
+    // Reuse the blank starter row instead of leaving an empty one behind.
+    row = rows.find(r => !r.querySelector('.lab-name').value.trim() && !r.querySelector('.lab-finding').value.trim());
+    if(row) row.querySelector('.lab-name').value = name;
+    else { addLabRow(name); row = document.querySelector('#lab-rows .entry-row:last-child'); }
+  }
+  row.querySelector('.lab-finding').focus();
+}
+(function buildLabQuickAdd(){
+  const container = document.getElementById('lab-quickadd');
+  Object.keys(labQuickTemplates).forEach(cc=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'complaint-block quickadd-group hidden';
+    wrap.dataset.cc = cc;
+    labQuickTemplates[cc].forEach(t=>{
+      const btn = makeQuickBtn('＋ ' + t.name, ()=>addLabRowFromButton(t.name));
+      if(t.sex) btn.dataset.sex = t.sex;
+      wrap.appendChild(btn);
+    });
+    container.appendChild(wrap);
+  });
+})();
+
 // ---- Custom phrases: physician-defined quick-add buttons ----
 // Stored only in this browser (localStorage); disabled in trial mode.
 const CUSTOM_PHRASES_KEY = 'uroCustomPhrases_v1';
@@ -2320,11 +2358,6 @@ const diagnosisDefaultWorkup = {
   "N13.2": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
   "N13.30": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
   "N23": { labs: [{name:"U/A", finding:"pending"}, {name:"KUB (X-ray)", finding:"ordered, pending result"}] },
-
-  // BPH — DRE and prostate sonography are required workup regardless of
-  // whether LUTS are present yet (N40.0 vs N40.1)
-  "N40.0": { labs: [{name:"DRE", finding:"pending"}, {name:"Prostate ultrasound (TRUS or transabdominal)", finding:"pending, measure prostate volume"}] },
-  "N40.1": { labs: [{name:"DRE", finding:"pending"}, {name:"Prostate ultrasound (TRUS or transabdominal)", finding:"pending, measure prostate volume"}, {name:"PSA", finding:"pending", sex:"male"}, {name:"Uroflow + PVR", finding:"pending"}] },
 
   // Hematuria with suspected bladder malignancy
   "C67.9": { labs: [{name:"Urine cytology", finding:"pending"}, {name:"Renal & bladder US", finding:"ordered, pending result"}] },
@@ -3199,9 +3232,7 @@ function generateNote(){
   if(positiveRF.length) rfLines += `c/o ${joinWith(positiveRF,'and')}.\n`;
   if(negativeRF.length) rfLines += `Denied ${joinWith(negativeRF,'or')}.`;
 
-  const age = document.getElementById('p-age').value.trim();
-  const patientInfo = age ? `${age} y/o ${sex}\n` : '';
-  const subjective = `${patientInfo}[${rocFullDate}] ${mainSentence}\n${rfLines}`.trim();
+  const subjective = `[${rocFullDate}] ${mainSentence}\n${rfLines}`.trim();
 
   // ---- OBJECTIVE ----
   let questionnaireText = "";
