@@ -609,6 +609,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="assets/clinical-tools.css?v=20261012-1">
 </head>
 <body>
 
@@ -709,6 +710,11 @@
       <button type="button" class="cc-btn" data-value="incontinence" onclick="selectComplaint('incontinence')">尿失禁<br><span>Incontinence</span></button>
       <button type="button" class="cc-btn" data-value="ed" data-sex="male" onclick="selectComplaint('ed')">性功能障礙<br><span>Erectile dysfunction</span></button>
       <button type="button" class="cc-btn" data-value="scrotal" onclick="selectComplaint('scrotal')">陰囊 / 睪丸問題<br><span>Scrotal / testicular</span></button>
+<button type="button" class="cc-btn" data-value="prostate" data-sex="male" onclick="selectComplaint('prostate')">攝護腺癌<br><span>Prostate cancer · 評估 / 追蹤</span></button>
+<button type="button" class="cc-btn" data-value="bladder" onclick="selectComplaint('bladder')">膀胱癌<br><span>Bladder cancer · 評估 / 追蹤</span></button>
+<button type="button" class="cc-btn" data-value="rcc" onclick="selectComplaint('rcc')">腎細胞癌<br><span>Renal cell carcinoma · 評估 / 追蹤</span></button>
+<button type="button" class="cc-btn" data-value="utuc" onclick="selectComplaint('utuc')">上泌尿道尿路上皮癌<br><span>UTUC · 評估 / 追蹤</span></button>
+<button type="button" class="cc-btn" data-value="testicular" data-sex="male" onclick="selectComplaint('testicular')">睪丸癌<br><span>Testicular cancer · 評估 / 追蹤</span></button>
       <button type="button" class="cc-btn" data-value="other" onclick="selectComplaint('other')">其他<br><span>Other</span></button>
     </div>
     <div class="row" style="margin-top:14px;">
@@ -732,25 +738,18 @@
 
         <div class="sub-block" id="redflag-subblock">
           <h3>紅旗警訊症狀 Red-flag symptoms（務必確認）</h3>
-          <fieldset class="redflag-box">
-            <legend>是否出現以下情形</legend>
-            <div class="check-grid">
-              <label><input type="checkbox" value="gross hematuria">肉眼血尿 Gross hematuria</label>
-              <label><input type="checkbox" value="fever/chills">發燒/畏寒 Fever/chills</label>
-              <label><input type="checkbox" value="severe flank/abdominal colicky pain">劇烈腰腹絞痛 Severe colicky pain</label>
-              <label><input type="checkbox" value="acute urinary retention">無法解尿(急性尿滯留) Acute retention</label>
-              <label><input type="checkbox" value="unexplained weight loss">不明原因體重下降 Weight loss</label>
-              <label><input type="checkbox" value="bone pain">骨頭疼痛 Bone pain</label>
-              <label><input type="checkbox" value="lower extremity weakness/numbness">下肢無力/麻木 LE weakness/numbness</label>
-              <label><input type="checkbox" value="severe acute scrotal pain (rule out torsion)">陰囊劇烈疼痛(需排除扭轉) Severe scrotal pain</label>
-            </div>
-          </fieldset>
+          <fieldset class="redflag-box"><legend>有 / 無 / 未詢問；只有明確選「無」才寫 Denied</legend><div class="check-grid"><label for="rf-0">肉眼血尿 Gross hematuria<select id="rf-0" data-symptom="gross hematuria"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-1">發燒/畏寒 Fever/chills<select id="rf-1" data-symptom="fever/chills"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-2">劇烈腰腹絞痛 Severe colicky pain<select id="rf-2" data-symptom="severe flank/abdominal colicky pain"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-3">無法解尿(急性尿滯留) Acute retention<select id="rf-3" data-symptom="acute urinary retention"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-4">不明原因體重下降 Weight loss<select id="rf-4" data-symptom="unexplained weight loss"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-5">骨頭疼痛 Bone pain<select id="rf-5" data-symptom="bone pain"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-6">下肢無力/麻木 LE weakness/numbness<select id="rf-6" data-symptom="lower extremity weakness/numbness"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label><label for="rf-7">陰囊劇烈疼痛(需排除扭轉) Severe scrotal pain<select id="rf-7" data-symptom="severe acute scrotal pain (rule out torsion)"><option value="unknown">未詢問 / 未知</option><option value="yes">有</option><option value="no">無</option></select></label></div></fieldset>
         </div>
 
         <div class="sub-block">
           <h3>主訴相關症狀清單 Complaint-specific symptoms</h3>
           <p class="placeholder-note cc-placeholder">請先在上方點選主訴類型。</p>
 
+<div class="complaint-block hidden" data-cc="prostate"><p class="hint">記錄確診 / 疑似、治療史、最近病理 / 影像與本次症狀。風險工具在 Assessment，必須填寫個別資料。</p><label><input type="checkbox" value="cancer follow-up">Cancer follow-up</label><label><input type="checkbox" value="treatment-related symptoms">Treatment-related symptoms</label></div>
+<div class="complaint-block hidden" data-cc="bladder"><p class="hint">記錄確診 / 疑似、治療史、最近病理 / 影像與本次症狀。風險工具在 Assessment，必須填寫個別資料。</p><label><input type="checkbox" value="cancer follow-up">Cancer follow-up</label><label><input type="checkbox" value="treatment-related symptoms">Treatment-related symptoms</label></div>
+<div class="complaint-block hidden" data-cc="rcc"><p class="hint">記錄確診 / 疑似、治療史、最近病理 / 影像與本次症狀。風險工具在 Assessment，必須填寫個別資料。</p><label><input type="checkbox" value="cancer follow-up">Cancer follow-up</label><label><input type="checkbox" value="treatment-related symptoms">Treatment-related symptoms</label></div>
+<div class="complaint-block hidden" data-cc="utuc"><p class="hint">記錄確診 / 疑似、治療史、最近病理 / 影像與本次症狀。風險工具在 Assessment，必須填寫個別資料。</p><label><input type="checkbox" value="cancer follow-up">Cancer follow-up</label><label><input type="checkbox" value="treatment-related symptoms">Treatment-related symptoms</label></div>
+<div class="complaint-block hidden" data-cc="testicular"><p class="hint">記錄確診 / 疑似、治療史、最近病理 / 影像與本次症狀。風險工具在 Assessment，必須填寫個別資料。</p><label><input type="checkbox" value="cancer follow-up">Cancer follow-up</label><label><input type="checkbox" value="treatment-related symptoms">Treatment-related symptoms</label></div>
           <div class="complaint-block hidden" data-cc="luts">
             <div class="check-grid">
               <label><input type="checkbox" value="hesitancy">排尿遲緩 Hesitancy</label>
@@ -963,7 +962,7 @@
             <div class="field"><label>排尿量 Voided vol (mL)</label><input type="number" id="m-vv" min="0"></div>
             <div class="field"><label>殘尿 PVR (mL)</label><input type="number" id="m-pvr" min="0"></div>
           </div>
-          <p class="hint" style="margin-top:-4px;">填寫後自動計算 PSA density、判讀尿流速與殘尿，並寫入 Labs；體積 ≥25mL 自動勾選 N40.1。</p>
+          <p class="hint" style="margin-top:-4px;">填寫後自動計算 PSA density、判讀尿流速與殘尿，並寫入 Labs；體積增大僅提示，由醫師確認診斷；PSAD 需結合 MRI 與臨床情境。</p>
           <div id="uro-measure-tag" class="score-tag hidden"></div>
         </div>
 
@@ -1001,6 +1000,11 @@
         <div class="sub-block">
           <p class="placeholder-note icd-placeholder">請先在上方點選主訴類型。</p>
 
+<div class="complaint-block icd-block hidden" data-cc="prostate"><p class="hint">主訴入口不代表確診；確認病理與病史後再勾選診斷。</p><label><input type="checkbox" value="C61 - Malignant neoplasm of prostate">C61 Prostate cancer</label></div>
+<div class="complaint-block icd-block hidden" data-cc="bladder"><p class="hint">主訴入口不代表確診；確認病理與病史後再勾選診斷。</p><label><input type="checkbox" value="C67.9 - Malignant neoplasm of bladder, unspecified">C67.9 Bladder cancer</label></div>
+<div class="complaint-block icd-block hidden" data-cc="rcc"><p class="hint">主訴入口不代表確診；確認病理與病史後再勾選診斷。</p><label><input type="checkbox" value="C64.9 - Malignant neoplasm of unspecified kidney, except renal pelvis">C64.9 Renal cell carcinoma</label></div>
+<div class="complaint-block icd-block hidden" data-cc="utuc"><p class="hint">主訴入口不代表確診；確認病理與病史後再勾選診斷。</p><label><input type="checkbox" value="C65.9 - Malignant neoplasm of unspecified renal pelvis">C65.9 UTUC</label><label><input type="checkbox" value="C66.9 - Malignant neoplasm of unspecified ureter">C66.9 Ureter cancer</label></div>
+<div class="complaint-block icd-block hidden" data-cc="testicular"><p class="hint">主訴入口不代表確診；確認病理與病史後再勾選診斷。</p><label><input type="checkbox" value="C62.90 - Malignant neoplasm of unspecified testis, unspecified whether descended or undescended">C62.90 Testicular cancer</label></div>
           <div class="complaint-block icd-block hidden" data-cc="luts">
             <label data-sex="male"><input type="checkbox" value="N40.0 - Benign prostatic hyperplasia without lower urinary tract symptoms"><span class="icd-code">N40.0</span> Benign prostatic hyperplasia without LUTS</label>
             <label data-sex="male"><input type="checkbox" value="N40.1 - Benign prostatic hyperplasia with lower urinary tract symptoms"><span class="icd-code">N40.1</span> Benign prostatic hyperplasia with LUTS</label>
@@ -1010,7 +1014,7 @@
             <label><input type="checkbox" value="R35.0 - Frequency of micturition"><span class="icd-code">R35.0</span> Frequency of micturition</label>
             <label><input type="checkbox" value="R35.1 - Nocturia"><span class="icd-code">R35.1</span> Nocturia</label>
             <label data-sex="female"><input type="checkbox" value="N32.81 - Overactive bladder"><span class="icd-code">N32.81</span> Overactive bladder</label>
-            <p class="hint" style="margin:8px 0 0;width:100%;">Frequency、Nocturia、Urgency 會依問卷作答自動勾選；Objective 填攝護腺體積 ≥25mL 會自動勾選 N40.1（都可自行取消）。</p>
+            <p class="hint" style="margin:8px 0 0;width:100%;">Frequency、Nocturia、Urgency 會依問卷作答自動勾選；體積增大只顯示提示，BPH 診斷需自行確認。</p>
           </div>
 
           <div class="complaint-block icd-block hidden" data-cc="hematuria">
@@ -1066,6 +1070,7 @@
         </div>
 
         <div class="sub-block">
+<h3>臨床計算與癌症風險工具</h3><p class="hint">點選開啟右側選單；完成後收回並保留結果。分期、風險分組與預後分開呈現，加入病歷前請確認。</p><div id="clinical-tools"></div><details><summary>歷次工具結果（回診載入後顯示）</summary><pre id="clinical-past-results">尚無歷次紀錄。</pre></details>
           <h3>腫瘤分期治療指引查詢 Cancer stage &amp; guideline reference <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">(僅供你參考，不會列入病歷文字)</span></h3>
           <button type="button" class="add-row-btn" id="guideline-toggle-btn" onclick="toggleGuidelinePanel()">▸ 顯示指引查詢工具</button>
           <div id="guideline-panel" class="hidden">
@@ -1296,6 +1301,7 @@
 
 </div><!-- /app-content -->
 
+<script src="assets/clinical-core.js?v=20261012-1"></script>
 <script>
 // ====== FIREBASE 設定：請填入你自己 Firebase 專案的設定值 ======
 // 到 Firebase Console > 專案設定 > 一般 > 你的應用程式 取得
@@ -1351,8 +1357,8 @@ let lastStructured = null;  // structured data saved alongside the note text
 let sectionTexts = { subjective:'', objective:'', assessment:'', plan:'', procedure:'' };
 
 // ====== 本機草稿自動暫存：僅存在此瀏覽器（localStorage），試用模式完全不啟用 ======
-const DRAFT_KEY = 'uroClinicNoteDraft_v1';
-const DRAFT_FIELD_IDS = ['p-name','p-id','p-age','p-sex','p-date-y','p-date-m','p-date-d',
+function draftStorageKey(){ return auth.currentUser ? 'uroClinicNoteDraft_v2_' + auth.currentUser.uid : null; }
+const DRAFT_FIELD_IDS = ['rf-0','rf-1','rf-2','rf-3','rf-4','rf-5','rf-6','rf-7','p-name','p-id','p-age','p-sex','p-date-y','p-date-m','p-date-d',
   'chief-complaint','cc-duration','cc-note','smoking-py','p-meds','p-allergy','p-social','p-surgical',
   'p-vs-bp','p-vs-pr','p-vs-bt','p-exam','p-imaging','plan-heading','plan-dx-summary','p-plan','luts-concurrent-uti','luts-prostate-vol','m-psa','m-qmax','m-vv','m-pvr','procedure-template','p-procedure'];
 
@@ -1382,18 +1388,18 @@ function collectFormSnapshot(){
   }));
   const pmh = Array.from(document.querySelectorAll('#pmh-fieldset input[type=checkbox]:checked')).map(el=>el.value);
   return { values, checked, radios, activeIcdButtons, labRows, pmh, arranged: getArrangedItems(),
-    educationApplied: Array.from(appliedEducation), carriedStatusPost, visitType: currentVisitType };
+    educationApplied: Array.from(appliedEducation), carriedStatusPost, visitType: currentVisitType, clinicalTools: window.ClinUI?.snapshot() || null };
 }
 
 function saveDraftToLocalStorage(){
   if(isDemoMode) return; // trial mode never persists anything, even locally
   try{
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(collectFormSnapshot()));
+    const key = draftStorageKey(); if(key) localStorage.setItem(key, JSON.stringify(collectFormSnapshot()));
   }catch(e){ /* best-effort only (private browsing, quota, etc.) */ }
 }
 
 function clearDraftFromLocalStorage(){
-  try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+  try{ const key = draftStorageKey(); if(key) localStorage.removeItem(key); }catch(e){}
 }
 
 function draftHasContent(draft){
@@ -1405,7 +1411,7 @@ function draftHasContent(draft){
 function restoreDraftFromLocalStorage(){
   if(isDemoMode) return;
   let draft;
-  try{ draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); }catch(e){ draft = null; }
+  try{ const key = draftStorageKey(); if(!key) return; draft = JSON.parse(localStorage.getItem(key) || 'null'); }catch(e){ draft = null; }
   if(!draftHasContent(draft)) return;
 
   if(draft.values['chief-complaint']) selectComplaint(draft.values['chief-complaint'], {skipScroll:true});
@@ -1415,6 +1421,8 @@ function restoreDraftFromLocalStorage(){
     if(el.type === 'checkbox') el.checked = !!draft.values[id];
     else el.value = draft.values[id];
   });
+  window.pendingClinicalSnapshot = draft.clinicalTools;
+  window.ClinUI?.restore(draft.clinicalTools);
   applySexFilter();
 
   (draft.checked||[]).forEach(v=>{
@@ -1457,6 +1465,7 @@ function copySection(key, btnEl){
   });
 }
 
+let restoredOwnerUid = null;
 if(isDemoMode){
   enterDemoMode();
 } else {
@@ -1465,9 +1474,11 @@ if(isDemoMode){
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
       document.getElementById('user-email').textContent = user.email;
+      if(restoredOwnerUid !== user.uid){clearFormFields();restoredOwnerUid=user.uid;restoreDraftFromLocalStorage();}
     } else {
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('app-content').classList.add('hidden');
+      clearFormFields(); restoredOwnerUid=null;
     }
   });
 }
@@ -1495,6 +1506,7 @@ function saveToFirebase(){
   const statusEl = document.getElementById('save-status');
   if(isDemoMode){ statusEl.textContent = '試用模式無法儲存資料。'; return; }
   const noteText = lastFullNote;
+  if(lastStructured && JSON.stringify(collectFormSnapshot()) !== JSON.stringify(lastStructured.formData)){ statusEl.textContent='表單已修改，請重新產生病歷後再儲存。'; return; }
   if(!noteText){ statusEl.textContent = '請先產生病歷再儲存。'; return; }
   statusEl.textContent = '儲存中...';
   db.collection('soap_notes').add(Object.assign({
@@ -1724,6 +1736,7 @@ function openRecordEditor(id){
   document.getElementById('editor-cc-label').textContent = complaintDisplayLabel(record.chiefComplaint, record.patientSex) || record.chiefComplaint || '(未分類)';
   document.getElementById('editor-note-text').value = record.noteText || '';
   document.getElementById('editor-status').textContent = '';
+  window.ClinUI?.history(record);
 }
 
 function closeRecordEditor(){
@@ -1758,6 +1771,11 @@ const complaintLabelsEN = {
   incontinence:"Urinary incontinence",
   ed:"Erectile dysfunction",
   scrotal:"Scrotal/testicular complaint",
+  prostate:"Prostate cancer evaluation / follow-up",
+  bladder:"Bladder cancer evaluation / follow-up",
+  rcc:"Renal cell carcinoma evaluation / follow-up",
+  utuc:"UTUC evaluation / follow-up",
+  testicular:"Testicular cancer evaluation / follow-up",
   other:"Other"
 };
 const hasQuestionnaire = { luts:true, incontinence:true, ed:true };
@@ -1820,10 +1838,11 @@ function addLabRow(name, rocY, rocM, rocD, finding){
   container.appendChild(div);
 }
 
+function getRedflagValues(state){ return Array.from(document.querySelectorAll('.redflag-box select')).filter(el=>el.value===state).map(el=>el.dataset.symptom); }
 function updateReminder(){
   const cc = document.getElementById('chief-complaint').value;
   if(!cc){ return; }
-  const redflags = Array.from(document.querySelectorAll('.redflag-box input[type=checkbox]:checked')).map(el=>el.value);
+  const redflags = getRedflagValues('yes');
   const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
   document.getElementById('reminder-output').textContent = buildExamSuggestions(cc, redflags, sex);
 }
@@ -1845,7 +1864,7 @@ function selectComplaint(v, opts){
   const showRedflags = v !== 'ed';
   redflagBlock.classList.toggle('hidden', !showRedflags);
   if(!showRedflags){
-    redflagBlock.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+    redflagBlock.querySelectorAll('select').forEach(el=>el.value='unknown');
   }
 
   document.querySelector('.cc-placeholder').classList.toggle('hidden', !!v);
@@ -1853,6 +1872,8 @@ function selectComplaint(v, opts){
   document.querySelector('.quest-placeholder').classList.toggle('hidden', !!hasQuestionnaire[v]);
   document.getElementById('uro-measure-block').classList.toggle('hidden', !uroMeasureComplaints.includes(v));
 
+  const cancerReference = {prostate:'prostate',bladder:'bladder',rcc:'rcc',testicular:'testicular'};
+  if(cancerReference[v]){document.getElementById('guideline-cancer').value=cancerReference[v];populateGuidelineStages();}
   const rest = document.getElementById('rest-of-form');
   const wasHidden = rest.classList.contains('hidden');
   rest.classList.remove('hidden');
@@ -2143,9 +2164,9 @@ function applySexFilter(){
   const procSel = document.getElementById('procedure-template');
   if(procSel.selectedOptions[0] && procSel.selectedOptions[0].classList.contains('hidden')) procSel.value = '';
   // ED (EHS, PDE5i, IIEF-5, N52.x) is male-only; drop it if sex flips to female.
-  if(sex === 'female' && document.getElementById('chief-complaint').value === 'ed'){
+  if(sex === 'female' && ['ed','prostate','testicular'].includes(document.getElementById('chief-complaint').value)){
     document.getElementById('chief-complaint').value = '';
-    document.querySelector('.cc-btn[data-value="ed"]').classList.remove('active');
+    document.querySelectorAll('.cc-btn.active').forEach(el=>el.classList.remove('active'));
     document.querySelectorAll('.complaint-block').forEach(b=>b.classList.add('hidden'));
     document.getElementById('rest-of-form').classList.add('hidden');
     document.querySelector('.cc-placeholder').classList.remove('hidden');
@@ -2504,29 +2525,20 @@ function syncLutsSymptomIcd(){
   refreshPlanHeadingFromDiagnoses();
 }
 
-function syncProstateVolIcd(){
-  const volEl = document.getElementById('luts-prostate-vol');
-  const vol = parseFloat(volEl.value);
-  if(isNaN(vol) || vol < 25) return;
-  const cb = getLutsIcdCheckbox('N40.1');
-  if(cb && !cb.checked && cb.dataset.userSet !== 'true'){
-    cb.checked = true;
-    refreshPlanHeadingFromDiagnoses();
-  }
-}
+function syncProstateVolIcd(){ updateUroMeasureTag(); }
 
 // ---- Structured urologic measurements: PSA density, uroflowmetry, PVR ----
-const uroMeasureComplaints = ['luts', 'incontinence'];
+const uroMeasureComplaints = ['luts', 'incontinence', 'prostate'];
 function readNum(id){
   const v = parseFloat(document.getElementById(id).value);
-  return isNaN(v) ? null : v;
+  return Number.isFinite(v) && v >= 0 ? v : null;
 }
 function computeUroMetrics(sex){
   const m = { psa:null, vol:null, psad:null, qmax:readNum('m-qmax'), vv:readNum('m-vv'), pvr:readNum('m-pvr') };
   if(sex === 'male'){
     m.psa = readNum('m-psa');
     m.vol = readNum('luts-prostate-vol');
-    if(m.psa !== null && m.vol) m.psad = m.psa / m.vol;
+    if(m.psa !== null && m.vol > 0 && Number.isFinite(m.psa / m.vol)) m.psad = m.psa / m.vol;
   }
   return m;
 }
@@ -2544,13 +2556,14 @@ function uroflowInterpretation(m){
   return notes;
 }
 function uroMetricsLines(m, rocDate){
+  const psaDate = window.ClinUI?.metricDate() || rocDate;
   const lines = [];
   if(m.psa !== null){
-    let psaLine = `[${rocDate}] PSA: ${m.psa} ng/mL`;
-    if(m.psad !== null) psaLine += ` (PSA density ${m.psad.toFixed(2)} ng/mL/cc${m.psad > 0.15 ? ', >0.15' : ''})`;
+    let psaLine = `[${psaDate}] PSA: ${m.psa} ng/mL`;
+    if(m.psad !== null) psaLine += ` (PSA density ${m.psad.toFixed(3)} ng/mL/cc${m.psad > 0.15 ? ', >0.15' : ''})`;
     lines.push(psaLine);
   }
-  if(m.vol !== null) lines.push(`[${rocDate}] Prostate sono: volume ${m.vol} mL`);
+  if(m.vol !== null) lines.push(`[${psaDate}] Prostate volume: ${m.vol} mL`);
   const flow = [];
   if(m.qmax !== null) flow.push(`Qmax ${m.qmax} mL/s`);
   if(m.vv !== null) flow.push(`voided volume ${m.vv} mL`);
@@ -2575,7 +2588,8 @@ function updateUroMeasureTag(){
   const sex = document.getElementById('p-sex').value === 'female' ? 'female' : 'male';
   const m = computeUroMetrics(sex);
   const parts = [];
-  if(m.psad !== null) parts.push(`PSAD ${m.psad.toFixed(2)}${m.psad > 0.15 ? '（>0.15，建議進一步評估 mpMRI/切片）' : ''}`);
+  if(m.psad !== null) parts.push(`PSAD ${m.psad.toFixed(3)}（需结合 MRI 與臨床情境）`);
+  if(m.vol >= 25) parts.push('體積增大：請依症狀與臨床評估確認診斷（不自動勾 ICD）');
   parts.push(...uroflowInterpretation(m));
   const tag = document.getElementById('uro-measure-tag');
   tag.textContent = parts.join(' · ');
@@ -2822,6 +2836,7 @@ function carryForwardFromRecord(r, history){
   const c = extractCarryData(r);
   const mrn = r.mrn || document.getElementById('p-id').value;
   clearFormFields();
+  window.ClinUI?.past(history);
   setVisitType('return');
   document.getElementById('p-id').value = mrn;
   document.getElementById('p-name').value = c.name;
@@ -3106,7 +3121,7 @@ function generateNote(){
   const notedFor = durationRaw ? `was noted for ${durationRaw}` : 'was noted';
   const ccNote = document.getElementById('cc-note').value;
 
-  const redflags = cc === 'ed' ? [] : checkedValues(document.querySelector('.redflag-box'));
+  const redflags = cc === 'ed' ? [] : getRedflagValues('yes');
 
   let complaintSymptoms = [];
   let icdSelections = [];
@@ -3172,7 +3187,7 @@ function generateNote(){
   };
   const allRedflagValues = Object.keys(redflagDisplay);
   const positiveRF = redflags.map(x=>redflagDisplay[x]||x);
-  const negativeRF = cc === 'ed' ? [] : allRedflagValues.filter(x=>!redflags.includes(x)).map(x=>redflagDisplay[x]||x);
+  const negativeRF = cc === 'ed' ? [] : getRedflagValues('no').map(x=>redflagDisplay[x]||x);
 
   // The doctor's own chief-complaint description (ccNote) is the actual
   // presenting complaint and belongs at the front of the sentence,
@@ -3262,6 +3277,9 @@ ${labsImagingText || "None available at this visit; see Plan for recommended wor
     assessment += `\n\nRed-flag symptoms present (${positiveRF.join(', ')}) - consider more urgent evaluation and expedited workup.`;
   }
 
+  const clinicalAssessment = window.ClinUI?.assessment();
+  if(clinicalAssessment) assessment += '\n\nClinical tools (physician selected):\n' + clinicalAssessment;
+
   // ---- PLAN ----
   const planHeading = document.getElementById('plan-heading').value;
   let planDxSummary = document.getElementById('plan-dx-summary').value;
@@ -3320,6 +3338,7 @@ ${plan}`;
       psa: uroMetrics.psa, vol: uroMetrics.vol, psad: uroMetrics.psad,
       qmax: uroMetrics.qmax, vv: uroMetrics.vv, pvr: uroMetrics.pvr
     },
+    clinicalTools: window.ClinUI?.snapshot() || null,
     formData: collectFormSnapshot()
   };
   document.getElementById('note-output-s').textContent = subjective;
@@ -3392,7 +3411,8 @@ function buildExamSuggestions(cc, redflags, sex){
       "Workup to be determined based on clinical evaluation"
     ]
   };
-  const list = base[cc] || base.other;
+  const oncology = {prostate:['Review PSA trend, DRE, biopsy grade and MRI; use EAU risk tool'],bladder:['Review TURBT pathology (stage/grade/CIS/LVI) and BCG history; use EAU/AUA risk tools'],rcc:['Review histology, surgery, pTNM, margins and renal function; select postoperative model or IMDC'],utuc:['Review CT urography, URS biopsy/cytology and renal function; use UTUC risk tool'],testicular:['Review orchiectomy histology, pre/post-operative AFP, beta-hCG and LDH, and staging imaging']};
+  const list = oncology[cc] || base[cc] || base.other;
   list.filter(Boolean).forEach(x=>lines.push("- "+x));
 
   if(redflags.length){
@@ -3594,9 +3614,12 @@ let draftSaveTimer = null;
     draftSaveTimer = setTimeout(saveDraftToLocalStorage, 400);
   });
 });
-restoreDraftFromLocalStorage();
 
 function clearFormFields(){
+  window.pendingClinicalSnapshot=null;
+  window.ClinUI?.reset();
+  document.getElementById('clinical-past-results').textContent='尚無歷次紀錄。';
+  document.querySelectorAll('.redflag-box select').forEach(el=>el.value='unknown');
   // Demographics
   document.getElementById('p-name').value = '';
   document.getElementById('p-id').value = '';
@@ -3689,5 +3712,6 @@ function discardDraftBanner(){
 }
 </script>
 
+<script src="assets/clinical-tools.js?v=20261012-1"></script>
 </body>
 </html>
