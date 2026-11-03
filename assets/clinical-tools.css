@@ -1,1 +1,89 @@
-.clinical-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.clinical-toolbar button,.clinical-card button{border:1px solid var(--line,#d7e0db);border-radius:10px;padding:9px 13px;background:white;color:var(--teal,#28614f);font:inherit;cursor:pointer}.clinical-card{border:1px solid var(--line,#d7e0db);border-left:4px solid var(--teal,#28614f);padding:16px;border-radius:12px;margin:12px 0;background:#f8fbf9}.clinical-card h4{margin:0 0 8px}.clinical-card p{white-space:pre-wrap}.clinical-card .clinical-actions{display:flex;flex-wrap:wrap;gap:8px}.clinical-drawer{margin:0 0 0 auto;border:0;padding:0;width:min(480px,100vw);max-width:100vw;height:100dvh;max-height:100dvh;color:var(--ink,#233b35);box-shadow:-12px 0 48px #15362b33;animation:clinical-slide .2s ease-out}.clinical-drawer::backdrop{background:#19382f66}.clinical-drawer form{padding:24px;min-height:100%;display:flex;flex-direction:column;gap:12px}.clinical-drawer header{display:flex;align-items:center;justify-content:space-between}.clinical-drawer header h2{margin:0}.clinical-drawer label{display:block;margin-bottom:6px;font-weight:600}.clinical-drawer input,.clinical-drawer select,.clinical-drawer textarea{width:100%;font:inherit;border:1px solid #bbcec4;border-radius:9px;padding:10px;background:white}.clinical-drawer textarea{min-height:100px}.clinical-drawer footer{display:flex;gap:12px;position:sticky;bottom:0;background:white;padding:12px 0}.clinical-drawer button{font:inherit;border:1px solid #bbcec4;border-radius:10px;background:#28614f;color:white;padding:10px 15px;cursor:pointer}.clinical-error{color:#9a3c24}.clinical-drawer [hidden]{display:none}.clinical-drawer :focus-visible,.clinical-toolbar :focus-visible,.clinical-card :focus-visible{outline:3px solid #518dbc;outline-offset:3px}.redflag-box label select{max-width:135px;margin-left:auto}.redflag-box label{display:flex;align-items:center;justify-content:space-between;gap:10px}.clinical-history{white-space:pre-wrap;background:#f8fbf9;padding:12px;border-radius:10px}@keyframes clinical-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}@media(prefers-reduced-motion:reduce){.clinical-drawer{animation:none}}@media(max-width:600px){.clinical-drawer{width:100vw}.redflag-box label{flex-wrap:wrap}}
+/* Clinical risk tools: toolbar, result cards and the right-hand drawer.
+   Same tokens as index.html (taste-skill app-screen rules): flat surfaces, 1px borders,
+   one accent on the primary action, shadow only on the drawer because it floats. */
+.clinical-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.clinical-toolbar button{
+  border:1px solid var(--control,#cdd3ce);border-radius:var(--radius-control,6px);
+  min-height:34px;padding:5px 12px;background:var(--surface,#fff);color:var(--text,#151a18);
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:background .12s,border-color .12s
+}
+.clinical-toolbar button:hover{border-color:var(--accent,#1f5a5e);background:var(--raised,#f8f9f8)}
+
+.clinical-card{
+  border:1px solid var(--border,#e4e7e3);border-radius:var(--radius-card,8px);
+  padding:14px 16px;margin:12px 0;background:var(--surface,#fff)
+}
+.clinical-card h4{margin:0 0 6px;font-size:14px;font-weight:600}
+.clinical-card p{white-space:pre-wrap;margin:0 0 6px;font-size:14px}
+.clinical-card p.hint{font-size:13px}
+.clinical-card a{color:var(--accent,#1f5a5e);font-size:13px}
+.clinical-card .clinical-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.clinical-card button{
+  border:1px solid var(--control,#cdd3ce);border-radius:var(--radius-control,6px);
+  height:32px;padding:0 12px;background:var(--surface,#fff);color:var(--text,#151a18);
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer
+}
+.clinical-card button:hover{background:var(--raised,#f8f9f8)}
+.clinical-card button:disabled{color:var(--faint,#6b716d);background:var(--raised,#f8f9f8);cursor:default}
+
+.clinical-drawer{
+  margin:0 0 0 auto;border:0;border-left:1px solid var(--border,#e4e7e3);padding:0;
+  width:min(480px,100vw);max-width:100vw;height:100dvh;max-height:100dvh;
+  color:var(--text,#151a18);background:var(--surface,#fff);
+  box-shadow:-12px 0 32px rgba(21,26,24,.12);animation:clinical-slide .2s ease-out
+}
+.clinical-drawer::backdrop{background:rgba(21,26,24,.32)}
+.clinical-drawer form{padding:0 24px;min-height:100%;display:flex;flex-direction:column;gap:0}
+.clinical-drawer header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px 0 14px;border-bottom:1px solid var(--border,#e4e7e3);margin-bottom:14px;
+  position:sticky;top:0;background:var(--surface,#fff);z-index:1
+}
+.clinical-drawer header h2{margin:0;font-size:18px;font-weight:600}
+.clinical-drawer #clinical-hint{margin:0 0 16px}
+.clinical-drawer #clinical-fields > div{margin-bottom:16px}
+.clinical-drawer label{display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--muted,#59625d)}
+.clinical-drawer input,.clinical-drawer select,.clinical-drawer textarea{
+  width:100%;font:inherit;font-size:15px;height:40px;border:1px solid var(--control,#cdd3ce);
+  border-radius:var(--radius-control,6px);padding:0 11px;background:var(--surface,#fff);color:var(--text,#151a18)
+}
+.clinical-drawer textarea{min-height:100px;height:auto;padding:9px 11px}
+.clinical-drawer footer{
+  display:flex;gap:8px;position:sticky;bottom:0;background:var(--surface,#fff);
+  padding:14px 0 18px;margin-top:auto;border-top:1px solid var(--rule,#eef0ed)
+}
+.clinical-drawer button{
+  font:inherit;font-size:14px;font-weight:500;height:40px;padding:0 16px;cursor:pointer;
+  border:1px solid var(--control,#cdd3ce);border-radius:var(--radius-control,6px);
+  background:var(--surface,#fff);color:var(--text,#151a18)
+}
+.clinical-drawer button:hover{background:var(--raised,#f8f9f8)}
+.clinical-drawer button[type=submit]{background:var(--accent,#1f5a5e);border-color:var(--accent,#1f5a5e);color:#fff;font-weight:600}
+.clinical-drawer button[type=submit]:hover{background:var(--accent-ink,#17464a)}
+.clinical-drawer #clinical-close{
+  width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+  border-color:transparent;background:none;color:var(--muted,#59625d)
+}
+.clinical-drawer #clinical-close:hover{background:var(--raised,#f8f9f8);color:var(--text,#151a18)}
+.clinical-error{color:var(--negative,#b42a25);font-size:13px;margin:0 0 8px}
+.clinical-error:empty{display:none}
+.clinical-drawer [hidden]{display:none}
+.clinical-drawer :focus-visible,.clinical-toolbar :focus-visible,.clinical-card :focus-visible{outline:2px solid var(--accent,#1f5a5e);outline-offset:2px}
+
+/* red flags: question on the left, yes / no / not asked on the right */
+.redflag-box label select{width:150px;max-width:150px;height:36px;margin-left:auto;font-size:14px;flex:0 0 150px}
+.redflag-box label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+.clinical-history{
+  white-space:pre-wrap;background:var(--raised,#f8f9f8);border:1px solid var(--border,#e4e7e3);
+  padding:12px 14px;border-radius:var(--radius-control,6px);font-size:13px
+}
+
+@keyframes clinical-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.clinical-drawer{animation:none}}
+@media(max-width:600px){
+  .clinical-drawer{width:100vw;border-left:0}
+  .clinical-drawer form{padding:0 16px}
+  .redflag-box label{flex-wrap:nowrap}
+  .redflag-box label select{width:132px;max-width:132px;flex-basis:132px}
+}
