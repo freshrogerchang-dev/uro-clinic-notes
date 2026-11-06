@@ -107,7 +107,7 @@
   .tab-switch{display:flex;gap:4px;flex-wrap:wrap;}
   .tab-btn{
     background:none;border:1px solid transparent;border-radius:var(--radius-control);
-    height:32px;padding:0 12px;font-size:14px;font-weight:500;color:var(--muted);
+    height:36px;padding:0 14px;font-size:15px;font-weight:500;color:var(--muted);
     transition:background .12s, color .12s;
   }
   .tab-btn:hover{background:var(--raised);color:var(--text);}
@@ -117,14 +117,14 @@
     display:inline-flex;padding:3px;background:var(--raised);border:1px solid var(--border);
     border-radius:calc(var(--radius-control) + 3px);
   }
-  .section .tab-btn{height:32px;}
+  .section .tab-btn{height:36px;}
   .section .tab-btn.active{background:var(--surface);border-color:var(--border);color:var(--accent-ink);}
   #topbar-reset-btn{border-color:var(--control);color:var(--text);background:var(--surface);}
   #topbar-reset-btn:hover{background:var(--raised);}
 
   .logout-btn{
     background:var(--surface);border:1px solid var(--control);border-radius:var(--radius-control);
-    height:32px;padding:0 12px;font-size:13px;color:var(--text);flex:0 0 auto;
+    height:36px;padding:0 14px;font-size:14px;color:var(--text);flex:0 0 auto;
     transition:background .12s, color .12s, border-color .12s;
   }
   .logout-btn:hover{background:var(--raised);}
@@ -226,11 +226,11 @@
   .q-block{border-top:1px solid var(--rule);padding-top:14px;margin-top:14px;}
   .q-block:first-child{border-top:none;margin-top:0;padding-top:0;}
   .q-text{font-size:14px;margin-bottom:8px;line-height:1.45;}
-  .opt-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .opt-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
   .opt-row label{
-    font-size:13px;font-weight:400;color:var(--text);
+    font-size:14.5px;font-weight:400;color:var(--text);
     border:1px solid var(--control);border-radius:var(--radius-control);
-    min-height:34px;padding:5px 11px;cursor:pointer;
+    min-height:38px;padding:6px 12px;cursor:pointer;
     display:flex;align-items:center;gap:6px;background:var(--surface);
     font-variant-numeric:tabular-nums;
   }
@@ -266,11 +266,11 @@
   .cc-btn{
     text-align:left;background:var(--surface);
     border:1px solid var(--control);border-radius:var(--radius-control);
-    padding:11px 12px;min-height:64px;
-    font-size:14px;font-weight:600;color:var(--text);line-height:1.35;
+    padding:12px 13px;min-height:70px;
+    font-size:15.5px;font-weight:600;color:var(--text);line-height:1.35;
     transition:border-color .12s, background .12s;
   }
-  .cc-btn span{display:block;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:3px;}
+  .cc-btn span{display:block;font-size:13.5px;font-weight:400;color:var(--muted);margin-top:3px;}
   .cc-btn:hover{border-color:var(--accent);}
   /* taste-skill-ignore: selected-state inset, not a resting shadow */
   .cc-btn.active{background:var(--accent-tint);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent-ink);}
@@ -306,7 +306,7 @@
   /* text actions: add a row, refresh, export, show/hide */
   .add-row-btn{
     background:none;border:none;color:var(--accent);
-    padding:6px 0;font-size:14px;font-weight:500;margin-top:2px;
+    padding:6px 0;font-size:15px;font-weight:500;margin-top:2px;
   }
   .add-row-btn:hover{text-decoration:underline;text-underline-offset:3px;}
 
@@ -315,8 +315,8 @@
   .quickadd-group .add-row-btn{margin-right:12px;}
   .quick-btn{
     background:var(--surface);border:1px solid var(--control);color:var(--text);
-    border-radius:var(--radius-control);min-height:32px;padding:4px 10px;
-    font-size:13px;line-height:1.3;transition:background .12s, border-color .12s;
+    border-radius:var(--radius-control);min-height:36px;padding:5px 12px;
+    font-size:14.5px;line-height:1.3;transition:background .12s, border-color .12s;
   }
   .quick-btn:hover{border-color:var(--accent);background:var(--raised);}
   .quick-btn:active{background:var(--accent-tint);}
@@ -326,7 +326,7 @@
 
   /* ---------- the primary action and the note ---------- */
   .generate-btn{
-    width:100%;height:48px;font-size:16px;font-weight:600;
+    width:100%;height:52px;font-size:17px;font-weight:600;
     background:var(--accent);color:#fff;border:none;border-radius:var(--radius-control);
     margin:4px 0 var(--gap);transition:background .12s;
   }
@@ -346,7 +346,7 @@
   .copy-icon-btn{
     display:inline-flex;align-items:center;justify-content:center;gap:6px;
     background:var(--surface);border:1px solid var(--control);border-radius:var(--radius-control);
-    height:30px;min-width:30px;padding:0 9px;font-size:13px;color:var(--text);line-height:1;
+    height:34px;min-width:34px;padding:0 11px;font-size:14px;color:var(--text);line-height:1;
     transition:background .12s;
   }
   .copy-icon-btn:hover{background:var(--raised);}
@@ -355,8 +355,8 @@
   /* secondary and tertiary buttons share one height */
   .copy-btn, .save-btn, .reset-btn{
     display:inline-flex;align-items:center;justify-content:center;
-    height:38px;padding:0 14px;margin-top:12px;margin-left:0;margin-right:8px;
-    border-radius:var(--radius-control);font-size:14px;font-weight:500;
+    height:42px;padding:0 16px;margin-top:12px;margin-left:0;margin-right:8px;
+    border-radius:var(--radius-control);font-size:15px;font-weight:500;
     background:var(--surface);border:1px solid var(--control);color:var(--text);
     transition:background .12s;
   }
@@ -383,8 +383,8 @@
   .login-card p{font-size:14px;color:var(--muted);margin:0 0 20px;}
   .login-card input{margin-bottom:10px;}
   .login-btn{
-    width:100%;height:44px;background:var(--accent);color:#fff;border:none;
-    border-radius:var(--radius-control);font-size:15px;font-weight:600;transition:background .12s;
+    width:100%;height:48px;background:var(--accent);color:#fff;border:none;
+    border-radius:var(--radius-control);font-size:16px;font-weight:600;transition:background .12s;
   }
   .login-btn:hover{background:var(--accent-ink);}
   .login-error{color:var(--negative);font-size:13px;margin-top:10px;}
@@ -438,10 +438,11 @@
     .demo-banner{padding:3px 7px;}
     .logout-btn{padding:0 10px;}
     .section .tab-switch{display:flex;flex-wrap:nowrap;}
-    .section .tab-btn{flex:1 1 0;padding:0 8px;font-size:13px;white-space:nowrap;}
+    .section .tab-btn{flex:1 1 0;padding:0 6px;font-size:14px;white-space:nowrap;}
     #tab-note-view > header, #tab-records-view > header{padding:20px 16px 16px;}
     #tab-note-view > header h1, #tab-records-view > header h1{font-size:21px;}
     .check-grid{grid-template-columns:1fr;}
+    .opt-row{grid-template-columns:repeat(2,minmax(0,1fr));}
     .redflag-box .check-grid{grid-template-columns:1fr;}
     .soap-header{padding:14px var(--pad) 12px;}
     .copy-btn, .save-btn, .reset-btn{flex:1 1 auto;}
@@ -450,7 +451,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<link rel="stylesheet" href="assets/clinical-tools.css?v=20261103-1">
+<link rel="stylesheet" href="assets/clinical-tools.css?v=20261104-1">
 </head>
 <body>
 
